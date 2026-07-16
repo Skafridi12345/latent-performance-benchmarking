@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-07-16
+
+### Fixed
+
+- Removed a many-to-many factor merge that inflated 29,825 unique
+  portfolio-months to 243,950 rows and invalidated the legacy outputs.
+- Replaced the unidentified intercept-plus-persistent-inefficiency ranking with
+  one primary estimand: HAC factor alpha with empirical-Bayes shrinkage.
+- Made SFA conditional scores invariant to return units and corrected the
+  conditional exponential-moment calculation.
+- Added a one-sided boundary likelihood-ratio test and suppress unsupported SFA
+  rankings.
+- Labelled rolling-window overlap explicitly and restricted structural
+  persistence interpretation to non-overlapping windows.
+- Added strictly forward validation with frozen training betas and HAC aggregate
+  uncertainty.
+- Removed the invalid pre-rebuild outputs and superseded report.
+
+### Added
+
+- Strict panel validation and SHA-256 source manifests.
+- Common-date circular block-bootstrap score and rank intervals.
+- Jarque-Bera, Durbin-Watson, Ljung-Box, and ARCH-LM residual diagnostics.
+- Numerical gradient, simulated-moment, unit-invariance, no-look-ahead, and
+  bootstrap-reproducibility tests.
+- Exact runtime and development dependency locks.
+- A source-generated technical report.
+
 ## [0.3.0] - 2026-05-25
 
 ### Added

@@ -77,14 +77,28 @@ def estimate_static_sfa(
                 "AIC": float(fit.aic),
                 "BIC": float(fit.bic),
                 "u_hat": float(np.mean(fit.u_hat)),
+                "u_hat_standardized": float(np.mean(fit.u_hat_standardized)),
                 "AE": float(np.mean(fit.AE)),
                 "AE_median": float(np.median(fit.AE)),
+                "AE_raw_plugin_legacy": float(np.mean(fit.AE_raw_plugin)),
+                "normal_log_likelihood": float(
+                    getattr(fit, "normal_log_likelihood", np.nan)
+                ),
+                "boundary_lr_stat": float(getattr(fit, "boundary_lr_stat", np.nan)),
+                "boundary_mixture_p_value": float(
+                    getattr(fit, "boundary_mixture_p_value", np.nan)
+                ),
+                "one_sided_component_supported": getattr(
+                    fit, "one_sided_component_supported", pd.NA
+                ),
                 "residual_mean": float(np.mean(fit.residuals)),
                 "residual_std": float(np.std(fit.residuals, ddof=1)),
                 "converged": converged,
                 "message": message,
                 "runtime_seconds": runtime,
             }
+            if hasattr(fit, "mu"):
+                row["mu"] = float(fit.mu)
             for name, coef in zip(feature_names, fit.beta):
                 row[f"coef_{name}"] = float(coef)
 
@@ -96,17 +110,27 @@ def estimate_static_sfa(
             ts["residual"] = fit.residuals
             ts["composed_error"] = fit.composed_error
             ts["u_hat"] = fit.u_hat
+            ts["u_hat_standardized"] = fit.u_hat_standardized
             ts["AE"] = fit.AE
+            ts["AE_raw_plugin_legacy"] = fit.AE_raw_plugin
             ts_rows.append(ts)
 
         rows.append(row)
 
     scores = pd.DataFrame(rows)
     if not scores.empty and "AE" in scores:
-        scores["AE_rank"] = (
-            scores["AE"].rank(ascending=False, method="first").astype("Int64")
+        valid = scores["AE"].notna() & scores["converged"].fillna(False)
+        if model_key == "half_normal" and "one_sided_component_supported" in scores:
+            valid &= scores["one_sided_component_supported"].fillna(False)
+        scores["AE_rank"] = pd.Series(pd.NA, index=scores.index, dtype="Int64")
+        scores.loc[valid, "AE_rank"] = (
+            scores.loc[valid, "AE"]
+            .rank(ascending=False, method="first")
+            .astype("Int64")
         )
-        scores = scores.sort_values("AE_rank").reset_index(drop=True)
+        scores = scores.sort_values("AE_rank", na_position="last").reset_index(
+            drop=True
+        )
 
     timeseries = pd.concat(ts_rows, ignore_index=True) if ts_rows else pd.DataFrame()
     return scores, timeseries

@@ -1,0 +1,72 @@
+{
+  "configuration": {
+    "bootstrap_block_length": 12,
+    "bootstrap_replicates": 200,
+    "bootstrap_seed": 2026,
+    "factor_file": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/ff3_factors.csv",
+    "factor_model": "ff3",
+    "forward_hac_lags": 4,
+    "forward_months": 12,
+    "hac_lags": 12,
+    "min_obs": 120,
+    "persistence_horizons": [
+      12,
+      60,
+      120
+    ],
+    "port_file": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/25_size_bm_portfolios.csv",
+    "results_dir": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/results",
+    "robustness_step": 120,
+    "robustness_windows": [
+      60,
+      120,
+      180
+    ],
+    "rolling_step": 12,
+    "rolling_window": 120,
+    "static_maxiter": 500,
+    "transition_horizon": 120
+  },
+  "dataset": {
+    "balanced_panel": true,
+    "duplicate_portfolio_months": 0,
+    "factor_cols": "mkt_rf,smb,hml",
+    "factor_columns": "mkt_rf,smb,hml",
+    "factor_model": "ff3",
+    "factor_source": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/ff3_factors.csv",
+    "factor_source_bytes": 37218,
+    "factor_source_sha256": "3a412f4bb89d740af47ba331ca9f9b7d9fa0657cf22fa3c5f142d0db8ce68c70",
+    "is_valid": true,
+    "missing_calendar_months": 0,
+    "n_months": 1193,
+    "n_observations": 29825,
+    "n_portfolios": 25,
+    "n_rows": 29825,
+    "n_unique_portfolio_months": 29825,
+    "portfolio_source": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/25_size_bm_portfolios.csv",
+    "portfolio_source_bytes": 1521315,
+    "portfolio_source_sha256": "05b45903b4ece361e80733136fc6e13a6e475a9c18b096d86345be458f210061",
+    "sample_end": "2025-11-30 23:59:59.999999999",
+    "sample_start": "1926-07-31 23:59:59.999999999"
+  },
+  "summary": {
+    "bootstrap_replicates": 200,
+    "factor_cols": "mkt_rf, smb, hml",
+    "factor_model": "ff3",
+    "figures_dir": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/results/figures",
+    "forward_hac_lags": 4,
+    "forward_months": 12,
+    "hac_lags": 12,
+    "n_portfolios": 25,
+    "n_rolling_estimates": 2250,
+    "n_rolling_windows": 90,
+    "primary_model": "HAC factor alpha with empirical-Bayes shrinkage",
+    "rolling_step": 12,
+    "rolling_window": 120,
+    "runtime_seconds": 46.634424099999706,
+    "sample_end": "2025-11-30",
+    "sample_start": "1926-07-31",
+    "sfa_diagnostic": "half-normal with truncated-normal sensitivity",
+    "tables_dir": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/results/tables"
+  }
+}

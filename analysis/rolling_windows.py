@@ -10,6 +10,9 @@ from sfa.models import make_sfa_model, normalise_model_type
 def _assign_window_ranks(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     valid = out["AE"].notna() & out["convergence_status"].astype(bool)
+    if "one_sided_component_supported" in out:
+        support = out["one_sided_component_supported"].fillna(False).astype(bool)
+        valid &= support
     out["rank"] = pd.NA
     out.loc[valid, "rank"] = (
         out.loc[valid]
@@ -106,6 +109,10 @@ def rolling_sfa(
                         "sigma_v": np.nan,
                         "sigma_u": np.nan,
                         "lambda": np.nan,
+                        "u_hat_standardized": np.nan,
+                        "boundary_lr_stat": np.nan,
+                        "boundary_mixture_p_value": np.nan,
+                        "one_sided_component_supported": False,
                     }
                 )
             else:
@@ -113,6 +120,9 @@ def rolling_sfa(
                     {
                         "AE": float(np.mean(fit.AE)),
                         "u_hat": float(np.mean(fit.u_hat)),
+                        "u_hat_standardized": float(
+                            np.mean(fit.u_hat_standardized)
+                        ),
                         "convergence_status": bool(fit.converged),
                         "message": message,
                         "log_likelihood": float(fit.log_likelihood),
@@ -121,6 +131,15 @@ def rolling_sfa(
                         "sigma_v": float(fit.sigma_v),
                         "sigma_u": float(fit.sigma_u),
                         "lambda": float(fit.lambda_),
+                        "boundary_lr_stat": float(
+                            getattr(fit, "boundary_lr_stat", np.nan)
+                        ),
+                        "boundary_mixture_p_value": float(
+                            getattr(fit, "boundary_mixture_p_value", np.nan)
+                        ),
+                        "one_sided_component_supported": getattr(
+                            fit, "one_sided_component_supported", pd.NA
+                        ),
                     }
                 )
             results.append(base)

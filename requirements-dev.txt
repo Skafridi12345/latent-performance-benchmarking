@@ -1,0 +1,5 @@
+-r requirements.txt
+jinja2>=3.1,<4
+pytest>=8,<10
+reportlab>=4.2,<5
+ruff>=0.6,<1

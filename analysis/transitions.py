@@ -60,9 +60,22 @@ def compute_transition_matrix(
             }
         )
     summary = pd.DataFrame(summary_rows)
+    if "window_length" in df.columns and df["window_length"].notna().any():
+        window_length = int(round(float(df["window_length"].median())))
+        overlap_fraction = max(
+            0.0, 1.0 - float(horizon_months) / float(window_length)
+        )
+    else:
+        window_length = np.nan
+        overlap_fraction = np.nan
     summary["top_quintile_persistence"] = float(matrix.loc[n_quantiles, n_quantiles])
     summary["bottom_quintile_persistence"] = float(matrix.loc[1, 1])
     summary["horizon_months"] = int(horizon_months)
+    summary["window_length_months"] = window_length
+    summary["window_overlap_fraction"] = overlap_fraction
+    summary["structural_inference_eligible"] = bool(
+        np.isfinite(overlap_fraction) and overlap_fraction == 0.0
+    )
     summary["n_transitions"] = int(len(transitions))
     return matrix, summary
 

@@ -36,14 +36,28 @@ def df_to_latex(
 def main() -> None:
     """Export selected pipeline CSV outputs as LaTeX tables."""
 
-    static_rank = pd.read_csv(TABLES / "static_efficiency_scores.csv")[
-        ["portfolio", "AE", "AE_rank"]
-    ].rename(columns={"portfolio": "Portfolio", "AE": "Mean AE", "AE_rank": "Rank"})
+    performance = pd.read_csv(TABLES / "performance_scores.csv")[
+        [
+            "portfolio",
+            "posterior_alpha_annualized_bps",
+            "bootstrap_rank_median",
+            "bootstrap_rank_ci_low",
+            "bootstrap_rank_ci_high",
+        ]
+    ].rename(
+        columns={
+            "portfolio": "Portfolio",
+            "posterior_alpha_annualized_bps": "Posterior Alpha (bps/year)",
+            "bootstrap_rank_median": "Median Rank",
+            "bootstrap_rank_ci_low": "Rank CI Low",
+            "bootstrap_rank_ci_high": "Rank CI High",
+        }
+    )
     persistence = pd.read_csv(TABLES / "rank_persistence.csv").rename(
         columns={
             "horizon_months": "Horizon",
             "spearman_rank_autocorrelation": "Spearman $\\rho$",
-            "pearson_ae_autocorrelation": "Pearson AE",
+            "pearson_score_autocorrelation": "Pearson Score",
             "average_absolute_rank_change": "Avg. |Rank Change|",
         }
     )
@@ -63,10 +77,10 @@ def main() -> None:
 
     outputs = [
         df_to_latex(
-            static_rank,
-            "table_static_rankings.tex",
-            "Static Cross-Sectional Performance Rankings",
-            "tab:static_rankings",
+            performance,
+            "table_performance_rankings.tex",
+            "HAC and Shrinkage-Adjusted Performance Rankings",
+            "tab:performance_rankings",
         ),
         df_to_latex(
             persistence,

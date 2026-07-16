@@ -4,6 +4,10 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
+from analysis.latent_performance import (
+    benjamini_hochberg,
+    estimate_hac_factor_model,
+)
 from sfa.loaders import design_matrix
 
 
@@ -41,8 +45,9 @@ def estimate_alpha_baseline(
     *,
     factor_model: str,
     min_obs: int = 60,
+    hac_lags: int = 12,
 ) -> pd.DataFrame:
-    """Estimate traditional OLS factor-alpha diagnostics by portfolio."""
+    """Estimate factor-alpha diagnostics with Newey-West HAC inference."""
 
     rows: list[dict] = []
     feature_names = ["alpha", *factor_cols]
@@ -54,6 +59,7 @@ def estimate_alpha_baseline(
         y = g["excess_return"].to_numpy(float)
         X = design_matrix(g, factor_cols)
         out = _ols_summary(y, X)
+        hac = estimate_hac_factor_model(y, X, hac_lags=hac_lags)
 
         row = {
             "portfolio": portfolio,
@@ -61,24 +67,36 @@ def estimate_alpha_baseline(
             "sample_start": g["date"].min(),
             "sample_end": g["date"].max(),
             "n_obs": int(len(g)),
-            "alpha": float(out["beta"][0]),
-            "alpha_t_stat": float(out["t_stats"][0]),
+            "alpha": float(hac["alpha"]),
+            "alpha_hac_se": float(hac["alpha_hac_se"]),
+            "alpha_t_stat": float(hac["alpha_hac_t_stat"]),
+            "alpha_p_value": float(hac["alpha_p_value"]),
+            "hac_lags": int(hac_lags),
             "residual_volatility": out["residual_volatility"],
             "r_squared": out["r_squared"],
             "mean_excess_return": out["mean_excess_return"],
             "volatility": out["volatility"],
             "sharpe_like_annualized": out["sharpe_like_annualized"],
         }
-        for name, coef, t_stat in zip(
-            feature_names[1:], out["beta"][1:], out["t_stats"][1:]
+        for name, coef, standard_error, t_stat, p_value in zip(
+            feature_names[1:],
+            hac["beta"][1:],
+            hac["hac_standard_errors"][1:],
+            hac["t_stats"][1:],
+            hac["p_values"][1:],
         ):
             row[f"beta_{name}"] = float(coef)
+            row[f"hac_se_{name}"] = float(standard_error)
             row[f"t_{name}"] = float(t_stat)
+            row[f"p_value_{name}"] = float(p_value)
         rows.append(row)
 
     result = pd.DataFrame(rows)
     if result.empty:
         return result
+    result["alpha_fdr_q_value"] = benjamini_hochberg(
+        result["alpha_p_value"].to_numpy(float)
+    )
     result["alpha_rank"] = (
         result["alpha"].rank(ascending=False, method="first").astype(int)
     )

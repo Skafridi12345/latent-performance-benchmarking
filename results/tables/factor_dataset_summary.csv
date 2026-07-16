@@ -1,2 +1,0 @@
-factor_model,factor_cols,sample_start,sample_end,n_observations,n_portfolios
-ff3,"mkt_rf,smb,hml",1926-07-31 23:59:59.999999,2025-11-30 23:59:59.999999,29825,25

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "latent-performance-benchmarking"
-version = "0.3.0"
-description = "Risk-adjusted portfolio benchmarking using stochastic frontier decomposition."
+version = "0.4.0"
+description = "Risk-adjusted portfolio benchmarking with HAC inference and hierarchical shrinkage."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
@@ -13,11 +13,11 @@ authors = [
 ]
 license = { text = "MIT" }
 dependencies = [
-    "matplotlib",
-    "numpy",
-    "pandas",
-    "scipy",
-    "seaborn",
+    "matplotlib>=3.9,<4",
+    "numpy>=2.0,<3",
+    "pandas>=2.2,<3",
+    "scipy>=1.13,<2",
+    "seaborn>=0.13,<1",
 ]
 keywords = [
     "quantitative-finance",
@@ -31,8 +31,10 @@ Repository = "https://github.com/drmshoaib/latent-performance-benchmarking"
 
 [project.optional-dependencies]
 dev = [
-    "pytest",
-    "ruff",
+    "jinja2>=3.1,<4",
+    "pytest>=8,<10",
+    "reportlab>=4.2,<5",
+    "ruff>=0.6,<1",
 ]
 
 [tool.pytest.ini_options]
@@ -50,3 +52,6 @@ extend-exclude = [".venv", "results", "latex_tables"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"reports/generate_report.py" = ["E501"]

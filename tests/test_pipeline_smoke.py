@@ -17,8 +17,12 @@ def test_pipeline_smoke_creates_expected_outputs(synthetic_csv_files, tmp_path):
             rolling_window=18,
             rolling_step=18,
             min_obs=12,
-            rolling_maxiter=25,
             static_maxiter=60,
+            hac_lags=3,
+            bootstrap_replicates=20,
+            bootstrap_block_length=6,
+            bootstrap_seed=7,
+            forward_months=6,
             persistence_horizons=(18,),
             transition_horizon=18,
             robustness_windows=(12, 18),
@@ -27,19 +31,23 @@ def test_pipeline_smoke_creates_expected_outputs(synthetic_csv_files, tmp_path):
     )
 
     expected_tables = [
-        "static_efficiency_scores.csv",
-        "alpha_vs_ae_comparison.csv",
-        "rolling_efficiency_scores.csv",
+        "dataset_manifest.csv",
+        "performance_scores.csv",
+        "performance_rank_uncertainty.csv",
+        "rolling_performance_scores.csv",
+        "forward_performance_validation.csv",
+        "forward_performance_aggregate.csv",
+        "sfa_asymmetry_diagnostics.csv",
         "rank_persistence.csv",
         "transition_matrix.csv",
         "mobility_summary.csv",
         "robustness_summary.csv",
-        "model_diagnostics.csv",
+        "performance_residual_diagnostics.csv",
     ]
     for name in expected_tables:
         assert (results_dir / "tables" / name).exists()
 
-    assert (results_dir / "figures" / "static_ae_ranking.png").exists()
+    assert (results_dir / "figures" / "performance_ranking.png").exists()
     assert summary["n_portfolios"] == 5
 
     transition = pd.read_csv(

@@ -33,7 +33,19 @@ def compute_persistence_metrics(
     df["quintile"] = df["quintile"].astype(int)
 
     rows: list[dict] = []
+    if "window_length" in df.columns and df["window_length"].notna().any():
+        window_length = int(round(float(df["window_length"].median())))
+    else:
+        window_length = np.nan
     for horizon in horizons_months:
+        overlap_fraction = (
+            max(0.0, 1.0 - float(horizon) / float(window_length))
+            if np.isfinite(window_length) and window_length > 0
+            else np.nan
+        )
+        inference_eligible = bool(
+            np.isfinite(overlap_fraction) and overlap_fraction == 0.0
+        )
         pair_rows = []
         periods = sorted(df["period"].unique())
         available = set(periods)
@@ -57,11 +69,14 @@ def compute_persistence_metrics(
                     "date_t": p0.to_timestamp(how="end"),
                     "date_t_plus_h": p1.to_timestamp(how="end"),
                     "horizon_months": int(horizon),
+                    "window_length_months": window_length,
+                    "window_overlap_fraction": overlap_fraction,
+                    "structural_inference_eligible": inference_eligible,
                     "n_portfolios": int(len(common)),
                     "spearman_rank_autocorrelation": spearmanr(
                         left["rank"], right["rank"]
                     ).statistic,
-                    "pearson_ae_autocorrelation": pearsonr(
+                    "pearson_score_autocorrelation": pearsonr(
                         left[score_col], right[score_col]
                     ).statistic,
                     "average_absolute_rank_change": float(
@@ -88,9 +103,12 @@ def compute_persistence_metrics(
                     "date_t": pd.NaT,
                     "date_t_plus_h": pd.NaT,
                     "horizon_months": int(horizon),
+                    "window_length_months": window_length,
+                    "window_overlap_fraction": overlap_fraction,
+                    "structural_inference_eligible": inference_eligible,
                     "n_portfolios": 0,
                     "spearman_rank_autocorrelation": np.nan,
-                    "pearson_ae_autocorrelation": np.nan,
+                    "pearson_score_autocorrelation": np.nan,
                     "average_absolute_rank_change": np.nan,
                     "top_quintile_stay_probability": np.nan,
                     "bottom_quintile_stay_probability": np.nan,

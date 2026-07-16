@@ -4,7 +4,12 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import norm
 
-from sfa.sfa_halfnormal import LOG_SIGMA_BOUNDS, MIN_SIGMA, _mills_ratio
+from sfa.sfa_halfnormal import (
+    LOG_SIGMA_BOUNDS,
+    MIN_SIGMA,
+    _mills_ratio,
+    _truncated_normal_exp_moment,
+)
 
 
 class TruncatedNormalSFA:
@@ -99,8 +104,9 @@ class TruncatedNormalSFA:
             used_warm_start = True
 
         base = self._ols_start()
+        starts.append(base)
         if not used_warm_start:
-            starts.extend([base, np.r_[base[: self.k], 0.01, base[self.k + 1 :]]])
+            starts.append(np.r_[base[: self.k], 0.01, base[self.k + 1 :]])
 
         best = None
         for start in starts:
@@ -111,18 +117,10 @@ class TruncatedNormalSFA:
                 bounds=self._bounds(),
                 options={"maxiter": maxiter, "ftol": 1e-9},
             )
-            if best is None or res.fun < best.fun:
-                best = res
-
-        if used_warm_start and best is not None and not best.success:
-            res = minimize(
-                self._neg_loglik,
-                base,
-                method="L-BFGS-B",
-                bounds=self._bounds(),
-                options={"maxiter": maxiter, "ftol": 1e-9},
-            )
-            if res.fun < best.fun:
+            if best is None or (bool(res.success), -float(res.fun)) > (
+                bool(best.success),
+                -float(best.fun),
+            ):
                 best = res
 
         self.res = best
@@ -153,11 +151,24 @@ class TruncatedNormalSFA:
         self.frontier = self.X @ beta
         self.composed_error = self.y - self.frontier
         sigma2 = sigma_v**2 + sigma_u**2
+        self.sigma_total = float(np.sqrt(sigma2))
         mu_star = (mu * sigma_v**2 - self.composed_error * sigma_u**2) / sigma2
         sigma_star = (sigma_v * sigma_u) / np.sqrt(sigma2)
         z = mu_star / max(sigma_star, MIN_SIGMA)
         self.u_hat = np.maximum(mu_star + sigma_star * _mills_ratio(z), 0.0)
-        self.AE = np.clip(np.exp(-self.u_hat), np.finfo(float).tiny, 1.0)
+        self.u_hat_standardized = self.u_hat / self.sigma_total
+        self.AE_raw_plugin = np.clip(
+            np.exp(-self.u_hat), np.finfo(float).tiny, 1.0
+        )
+        self.AE = np.clip(
+            _truncated_normal_exp_moment(
+                mu_star,
+                sigma_star,
+                rate=1.0 / self.sigma_total,
+            ),
+            np.finfo(float).tiny,
+            1.0,
+        )
         self.TE = self.AE
         self.fitted_values = self.frontier - self.u_hat
         self.residuals = self.y - self.fitted_values
@@ -176,6 +187,7 @@ class TruncatedNormalSFA:
             "TE_mean": float(np.mean(self.AE)),
             "TE_median": float(np.median(self.AE)),
             "u_hat_mean": float(np.mean(self.u_hat)),
+            "u_hat_standardized_mean": float(np.mean(self.u_hat_standardized)),
             "log_likelihood": self.log_likelihood,
             "AIC": self.aic,
             "BIC": self.bic,

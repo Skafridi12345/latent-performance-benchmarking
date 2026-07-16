@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -35,6 +36,118 @@ class FactorDataset:
             "n_observations": self.n_observations,
             "n_portfolios": self.n_portfolios,
         }
+
+
+def file_sha256(path: Path) -> str:
+    """Return a stable SHA-256 digest for a source artifact."""
+
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def validate_factor_panel(
+    df: pd.DataFrame,
+    factor_cols: list[str],
+    *,
+    require_balanced: bool = True,
+) -> dict:
+    """Validate the portfolio-month grain before any model is estimated.
+
+    The validation deliberately fails closed on duplicate entity-month keys and
+    inconsistent factor values. Those two conditions caused the contaminated
+    legacy results and must never be silently aggregated or deduplicated.
+    """
+
+    required = {"date", "portfolio", "ret", "rf", "excess_return", *factor_cols}
+    missing_columns = sorted(required - set(df.columns))
+    if missing_columns:
+        raise ValueError(f"Factor panel missing required columns: {missing_columns}")
+
+    work = df.copy()
+    work["date"] = pd.to_datetime(work["date"])
+    duplicate_count = int(work.duplicated(["portfolio", "date"]).sum())
+    if duplicate_count:
+        raise ValueError(
+            "Factor panel contains duplicate portfolio-month keys "
+            f"({duplicate_count} duplicate rows); possible join explosion."
+        )
+
+    null_counts = work[list(required)].isna().sum()
+    total_nulls = int(null_counts.sum())
+    if total_nulls:
+        bad = null_counts[null_counts > 0].astype(int).to_dict()
+        raise ValueError(f"Factor panel contains null values: {bad}")
+
+    factor_inconsistency = 0
+    for col in ["rf", *factor_cols]:
+        factor_inconsistency += int((work.groupby("date")[col].nunique() > 1).sum())
+    if factor_inconsistency:
+        raise ValueError(
+            "Factor values are inconsistent across portfolios for the same month."
+        )
+
+    n_rows = int(len(work))
+    n_unique_keys = int(work[["portfolio", "date"]].drop_duplicates().shape[0])
+    n_portfolios = int(work["portfolio"].nunique())
+    n_dates = int(work["date"].nunique())
+    counts = work.groupby("portfolio")["date"].nunique()
+    balanced = bool(
+        counts.nunique() == 1
+        and int(counts.iloc[0]) == n_dates
+        and n_rows == n_portfolios * n_dates
+    )
+    if require_balanced and not balanced:
+        raise ValueError(
+            "Factor panel is not balanced across portfolios; explicitly set "
+            "require_balanced=False only when missing portfolio-months are intended."
+        )
+
+    periods = pd.PeriodIndex(sorted(work["date"].unique()), freq="M")
+    expected_periods = pd.period_range(periods.min(), periods.max(), freq="M")
+    missing_months = int(len(expected_periods.difference(periods)))
+    if missing_months:
+        raise ValueError(
+            f"Factor panel has {missing_months} missing calendar months "
+            "in its date range."
+        )
+
+    return {
+        "is_valid": True,
+        "n_rows": n_rows,
+        "n_unique_portfolio_months": n_unique_keys,
+        "duplicate_portfolio_months": duplicate_count,
+        "n_portfolios": n_portfolios,
+        "n_months": n_dates,
+        "balanced_panel": balanced,
+        "missing_calendar_months": missing_months,
+        "sample_start": pd.Timestamp(work["date"].min()),
+        "sample_end": pd.Timestamp(work["date"].max()),
+        "factor_columns": ",".join(factor_cols),
+    }
+
+
+def dataset_manifest(
+    dataset: FactorDataset,
+    *,
+    portfolio_file: Path,
+    factor_file: Path,
+) -> dict:
+    """Build reproducible source and grain metadata for pipeline outputs."""
+
+    quality = validate_factor_panel(dataset.data, dataset.factor_cols)
+    return {
+        **dataset.summary(),
+        **quality,
+        "portfolio_source": str(Path(portfolio_file).resolve()),
+        "portfolio_source_sha256": file_sha256(portfolio_file),
+        "portfolio_source_bytes": int(Path(portfolio_file).stat().st_size),
+        "factor_source": str(Path(factor_file).resolve()),
+        "factor_source_sha256": file_sha256(factor_file),
+        "factor_source_bytes": int(Path(factor_file).stat().st_size),
+    }
 
 
 def _normalise_column_name(name: object) -> str:
@@ -182,6 +295,8 @@ def build_factor_dataset(
     )
     if df.empty:
         raise ValueError("No observations remain after factor/portfolio alignment.")
+
+    validate_factor_panel(df, cols)
 
     return FactorDataset(
         data=df,

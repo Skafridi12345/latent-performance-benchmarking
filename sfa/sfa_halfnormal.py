@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from scipy.optimize import minimize
-from scipy.stats import norm
+from scipy.stats import chi2, norm
 
 LOG_SIGMA_BOUNDS = (-20.0, 2.0)
 MIN_SIGMA = 1e-10
@@ -28,6 +28,26 @@ def _mills_ratio(z: np.ndarray) -> np.ndarray:
 
     log_ratio = norm.logpdf(z) - norm.logcdf(z)
     return np.exp(np.clip(log_ratio, -745.0, 50.0))
+
+
+def _truncated_normal_exp_moment(
+    mu: np.ndarray,
+    sigma: float,
+    *,
+    rate: float,
+) -> np.ndarray:
+    """Return E[exp(-rate * U)] for U ~ N(mu, sigma^2), U >= 0."""
+
+    sigma = max(float(sigma), MIN_SIGMA)
+    rate = max(float(rate), 0.0)
+    z = np.asarray(mu, dtype=float) / sigma
+    log_moment = (
+        -rate * np.asarray(mu, dtype=float)
+        + 0.5 * (rate * sigma) ** 2
+        + norm.logcdf(z - rate * sigma)
+        - norm.logcdf(z)
+    )
+    return np.exp(np.clip(log_moment, -745.0, 0.0))
 
 
 class HalfNormalSFA:
@@ -145,10 +165,10 @@ class HalfNormalSFA:
             used_warm_start = True
 
         base = self._ols_start()
+        starts.append(base)
         if not used_warm_start:
             starts.extend(
                 [
-                    base,
                     np.r_[
                         base[: self.k],
                         np.log(np.exp(base[self.k]) * 0.75),
@@ -172,19 +192,10 @@ class HalfNormalSFA:
                 bounds=self._bounds(),
                 options={"maxiter": maxiter, "ftol": 1e-9},
             )
-            if best is None or res.fun < best.fun:
-                best = res
-
-        if used_warm_start and best is not None and not best.success:
-            res = minimize(
-                self._neg_loglik,
-                base,
-                jac=self._neg_loglik_grad,
-                method="L-BFGS-B",
-                bounds=self._bounds(),
-                options={"maxiter": maxiter, "ftol": 1e-9},
-            )
-            if res.fun < best.fun:
+            if best is None or (bool(res.success), -float(res.fun)) > (
+                bool(best.success),
+                -float(best.fun),
+            ):
                 best = res
 
         self.res = best
@@ -203,6 +214,9 @@ class HalfNormalSFA:
         self.sigma_v = sigma_v
         self.sigma_u = sigma_u
         self.lambda_ = sigma_u / sigma_v
+        self.sigma_v_unconstrained = sigma_v
+        self.sigma_u_unconstrained = sigma_u
+        self.lambda_unconstrained = self.lambda_
         self.log_likelihood = float(-self.res.fun)
         self.n_params = self.k + 2
         self.aic = float(2 * self.n_params - 2 * self.log_likelihood)
@@ -214,12 +228,59 @@ class HalfNormalSFA:
         self.frontier = self.X @ beta
         self.composed_error = self.y - self.frontier
 
+        beta_ols = np.linalg.lstsq(self.X, self.y, rcond=None)[0]
+        ols_residuals = self.y - self.X @ beta_ols
+        ols_variance = max(float(ols_residuals @ ols_residuals) / self.n, MIN_SIGMA**2)
+        self.normal_log_likelihood = float(
+            -0.5
+            * self.n
+            * (np.log(2.0 * np.pi) + 1.0 + np.log(ols_variance))
+        )
+        self.boundary_lr_stat = max(
+            0.0, 2.0 * (self.log_likelihood - self.normal_log_likelihood)
+        )
+        self.boundary_mixture_p_value = float(
+            0.5 * chi2.sf(self.boundary_lr_stat, df=1)
+        )
+        self.one_sided_component_supported = bool(
+            self.boundary_mixture_p_value < 0.05
+        )
+
         sigma2 = sigma_v**2 + sigma_u**2
+        self.sigma_total = float(np.sqrt(sigma2))
         mu_star = -(sigma_u**2 * self.composed_error) / sigma2
         sigma_star = (sigma_v * sigma_u) / np.sqrt(sigma2)
         z = mu_star / max(sigma_star, MIN_SIGMA)
         self.u_hat = np.maximum(mu_star + sigma_star * _mills_ratio(z), 0.0)
-        self.AE = np.clip(np.exp(-self.u_hat), np.finfo(float).tiny, 1.0)
+        self.u_hat_standardized = self.u_hat / self.sigma_total
+        self.AE_raw_plugin = np.clip(
+            np.exp(-self.u_hat), np.finfo(float).tiny, 1.0
+        )
+        self.AE = np.clip(
+            _truncated_normal_exp_moment(
+                mu_star,
+                sigma_star,
+                rate=1.0 / self.sigma_total,
+            ),
+            np.finfo(float).tiny,
+            1.0,
+        )
+        if not self.one_sided_component_supported:
+            # Near the sigma_u=0 boundary the likelihood is flat and arbitrary
+            # tiny sigma_u estimates create unstable rankings. Report the null
+            # diagnostic instead of turning numerical noise into inefficiency.
+            self.u_hat = np.zeros_like(self.composed_error)
+            self.u_hat_standardized = np.zeros_like(self.composed_error)
+            self.AE_raw_plugin = np.ones_like(self.composed_error)
+            self.AE = np.ones_like(self.composed_error)
+            self.beta = beta_ols
+            self.alpha = float(beta_ols[0])
+            self.sigma_v = float(np.sqrt(ols_variance))
+            self.sigma_u = 0.0
+            self.lambda_ = 0.0
+            self.sigma_total = self.sigma_v
+            self.frontier = self.X @ beta_ols
+            self.composed_error = self.y - self.frontier
         self.TE = self.AE
         self.fitted_values = self.frontier - self.u_hat
         self.residuals = self.y - self.fitted_values
@@ -250,6 +311,11 @@ class HalfNormalSFA:
             "TE_mean": float(np.mean(self.AE)),
             "TE_median": float(np.median(self.AE)),
             "u_hat_mean": float(np.mean(self.u_hat)),
+            "u_hat_standardized_mean": float(np.mean(self.u_hat_standardized)),
+            "normal_log_likelihood": self.normal_log_likelihood,
+            "boundary_lr_stat": self.boundary_lr_stat,
+            "boundary_mixture_p_value": self.boundary_mixture_p_value,
+            "one_sided_component_supported": self.one_sided_component_supported,
             "log_likelihood": self.log_likelihood,
             "AIC": self.aic,
             "BIC": self.bic,
