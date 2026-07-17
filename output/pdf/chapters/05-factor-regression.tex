@@ -3,64 +3,153 @@
 \chapter{Factor regression and the meaning of
 alpha}\label{factor-regression-and-the-meaning-of-alpha}}
 
-\[
-FF3 regressiony_{\mathrm{it}} = \alpha _{i} + \beta _{i,M}(Mkt-RF)_{t} + \beta _{i,S}SMB_{t} + \beta _{i,H}HML_{t} + \varepsilon _{\mathrm{it}}
-\]
+This chapter defines the central estimand of the study --- the factor
+alpha --- and derives, applies, and interprets the estimator that produces
+it. The general least-squares and influence-weight results were
+established in Chapter~\ref{preliminaries} (\S\ref{prelim-ols}); here they
+are specialised to the three-factor model, extended to the sampling
+distribution of alpha, and given an economic reading.
 
-For each portfolio, ordinary least squares chooses the intercept and
-factor loadings that minimise the sum of squared residuals. In matrix
-notation:
-
-\[
-\hat{\theta }_{i} = (X{}^{\prime}X)^{-1}X{}^{\prime}y_{i}, \hat{\theta }_{i} = (\hat{\alpha }_{i}, \hat{\beta }{}^{\prime}_{i}){}^{\prime}
-\]
+For portfolio $i$ in month $t$, the Fama--French three-factor (FF3)
+regression is
+\begin{equation}\label{eq:ff3}
+y_{it} = \alpha_i + \beta_{i,M}\,(\mathrm{Mkt}\!-\!\mathrm{RF})_t
+        + \beta_{i,S}\,\mathrm{SMB}_t + \beta_{i,H}\,\mathrm{HML}_t
+        + \varepsilon_{it},
+\end{equation}
+where $y_{it}=r_{it}-r_{ft}$ is the portfolio's excess return and the three
+regressors are the traded Fama--French factors introduced in
+\S\ref{prelim-ff} and constructed in Chapter~4:
+\begin{itemize}
+\tightlist
+\item
+  $(\mathrm{Mkt}\!-\!\mathrm{RF})_t$ is the aggregate market return in
+  excess of the risk-free rate;
+\item
+  $\mathrm{SMB}_t$ (``small minus big'') is the size factor --- the return
+  of small-capitalisation minus large-capitalisation portfolios;
+\item
+  $\mathrm{HML}_t$ (``high minus low'') is the value factor --- the return
+  of high book-to-market (value) minus low book-to-market (growth)
+  portfolios.
+\end{itemize}
+The coefficients $\beta_{i,M},\beta_{i,S},\beta_{i,H}$ are the portfolio's
+sensitivities (loadings) to these factors, $\alpha_i$ is the intercept, and
+$\varepsilon_{it}$ is the month-$t$ residual. Collecting a constant and the
+$K=3$ factor series into the design matrix $X$ and writing
+$\theta_i=(\alpha_i,\beta_i^{\top})^{\top}$, ordinary least squares chooses
+the intercept and loadings that minimise the residual sum of squares,
+giving
+\begin{equation}\label{eq:ols-theta}
+\hat\theta_i = (X^{\top}X)^{-1}X^{\top}y_i,
+\qquad \hat\theta_i=(\hat\alpha_i,\hat\beta_i^{\top})^{\top} .
+\end{equation}
 
 \hypertarget{deriving-ordinary-least-squares}{%
 \section{Deriving ordinary least
 squares}\label{deriving-ordinary-least-squares}}
 
-For one portfolio, write y=X\ensuremath{\theta }+\ensuremath{\varepsilon }, where the first column of X is a column
-of ones and the remaining columns contain factor returns. Define
-
-\[
-S(\theta ) = (y-X\theta ){}^{\prime}(y-X\theta ).
-\]
-
-Expanding and differentiating with respect to \ensuremath{\theta } gives
-
-\[
-S(\theta )=y{}^{\prime}y-2\theta {}^{\prime}X{}^{\prime}y+\theta {}^{\prime}X{}^{\prime}X\theta , \partial S/\partial \theta  = -2X{}^{\prime}y+2X{}^{\prime}X\theta .
-\]
-
-At an interior minimum, the gradient is zero:
-
-\[
-X{}^{\prime}X\hat{\theta }=X{}^{\prime}y \Longrightarrow  \hat{\theta }=(X{}^{\prime}X)^{-1}X{}^{\prime}y.
-\]
-
-The fitted residual vector is e=y\ensuremath{-}X\ensuremath{\hat{\theta }}. The normal equations imply X\ensuremath{{}^{\prime}}e=0:
-residuals are orthogonal to the intercept and every included factor in
-the estimation sample.
+This is the specialisation of the general derivation in \S\ref{prelim-ols};
+it is repeated here in the factor-model notation because every later step
+builds on it. For one portfolio, write $y=X\theta+\varepsilon$, where the
+first column of $X$ is a column of ones and the remaining columns hold the
+factor returns. The least-squares objective is
+\begin{equation}\label{eq:rss}
+S(\theta) = (y-X\theta)^{\top}(y-X\theta)
+          = y^{\top}y - 2\theta^{\top}X^{\top}y + \theta^{\top}X^{\top}X\theta .
+\end{equation}
+Differentiating and setting the gradient to zero gives the normal
+equations,
+\begin{equation}\label{eq:normal-eq}
+\frac{\partial S}{\partial\theta} = -2X^{\top}y + 2X^{\top}X\theta = 0
+\ \Longrightarrow\ X^{\top}X\hat\theta = X^{\top}y
+\ \Longrightarrow\ \hat\theta = (X^{\top}X)^{-1}X^{\top}y,
+\end{equation}
+and the Hessian $2X^{\top}X\succeq 0$ confirms a global minimum. The
+residual vector is $e=y-X\hat\theta$, and the normal equations imply
+$X^{\top}e=0$: the residuals are orthogonal to the intercept and to every
+included factor \emph{in the estimation sample}. Orthogonality in-sample
+is a mechanical property of OLS, not evidence that the model is correct.
 
 \hypertarget{deriving-the-intercept-influence-weights}{%
 \section{Deriving the intercept influence
 weights}\label{deriving-the-intercept-influence-weights}}
 
-Substitute y=X\ensuremath{\theta }+\ensuremath{\varepsilon } into the estimator:
+Substituting $y=X\theta+\varepsilon$ into the estimator gives the
+estimation error
+\begin{equation}\label{eq:est-error}
+\hat\theta-\theta = (X^{\top}X)^{-1}X^{\top}\varepsilon .
+\end{equation}
+Let $q_0=(1,0,\dots,0)^{\top}$ select the intercept. Then
+\begin{equation}\label{eq:ch5-influence}
+\hat\alpha-\alpha = q_0^{\top}(X^{\top}X)^{-1}X^{\top}\varepsilon
+= a^{\top}\varepsilon = \sum_{t=1}^{T} a_t\,\varepsilon_t,
+\qquad a^{\top}=q_0^{\top}(X^{\top}X)^{-1}X^{\top},
+\end{equation}
+so $a$ is a fixed $T\times1$ vector of \emph{influence weights} that
+depends only on the design $X$, not on the returns. Two facts follow that
+matter for everything downstream. First, the intercept error is a
+weighted sum of the residual shocks, which is the object whose variance
+must be estimated (next section). Second, because all 25 portfolios share
+the same factors, they share the \emph{same} weights $a$; applying them to
+the same-month residual vector turns 25 separate errors into one jointly
+distributed vector --- the bridge from OLS to the joint HAC covariance of
+Chapter~6 (\S\ref{prelim-hac}).
 
-\[
-\hat{\theta }-\theta =(X{}^{\prime}X)^{-1}X{}^{\prime}\varepsilon .
-\]
+\section{The sampling distribution and reported statistics of alpha}\label{alpha-sampling}
 
-Let q\textsubscript{0}=(1,0,\ldots,0)\ensuremath{{}^{\prime}} select the intercept. Then
+A point estimate is meaningless without its uncertainty. From
+$\hat\alpha-\alpha=a^{\top}\varepsilon$ and the covariance rule
+\eqref{eq:affine}, the variance of the estimated alpha is
+\begin{equation}\label{eq:var-alpha}
+\operatorname{Var}(\hat\alpha) = a^{\top}\Omega\,a,
+\qquad \Omega=\operatorname{Cov}(\varepsilon\mid X).
+\end{equation}
+Three cases make the content of \eqref{eq:var-alpha} concrete.
 
-\[
-\hat{\alpha }-\alpha =q{}^{\prime}_{0}(X{}^{\prime}X)^{-1}X{}^{\prime}\varepsilon  = a{}^{\prime}\varepsilon  = \sum _{t=1}^{T}a_{t}\varepsilon _{t},
-\]
+\emph{Classical case.} If the residuals were homoskedastic and serially
+independent, $\Omega=\sigma^2 I$, then
+$\operatorname{Var}(\hat\alpha)=\sigma^2\,a^{\top}a=\sigma^2\,[(X^{\top}X)^{-1}]_{00}$.
+In the centred single-factor toy below, $a_t=1/T$, so this is simply
+$\sigma^2/T$ --- the familiar standard error of a sample mean.
 
-where a\ensuremath{{}^{\prime}}=q\ensuremath{{}^{\prime}}\textsubscript{0}(X\ensuremath{{}^{\prime}}X)\textsuperscript{\ensuremath{-}1}X\ensuremath{{}^{\prime}} is a 1 \ensuremath{\times } T row
-vector. These a\textsubscript{t} weights are the bridge from OLS to the
-joint HAC construction.
+\emph{Realistic case (HAC).} Monthly return residuals are heteroskedastic
+and autocorrelated (Chapter~13 rejects the classical assumptions), so the
+one-period formula understates uncertainty. Treating the scalar score
+$s_t=a_t\varepsilon_t$ as a serially dependent series, the
+heteroskedasticity- and autocorrelation-consistent variance is the
+long-run variance of \S\ref{prelim-hac} with Bartlett weights,
+\begin{equation}\label{eq:hac-alpha}
+\widehat{\operatorname{Var}}_{\mathrm{HAC}}(\hat\alpha)
+=\frac{T}{T-P}\Bigl\{\hat\gamma_0+2\sum_{l=1}^{L}\Bigl(1-\tfrac{l}{L+1}\Bigr)\hat\gamma_l\Bigr\},
+\qquad \hat\gamma_l=\sum_{t=l+1}^{T} s_t s_{t-l},
+\end{equation}
+with $P=K+1$ and $L=12$. This is exactly the diagonal element of the joint
+covariance of Chapter~6, and reproducing it against \texttt{statsmodels}
+is the single-portfolio audit performed there.
+
+\emph{Test statistics.} The HAC standard error is
+$\mathrm{SE}_{\mathrm{HAC}}(\hat\alpha)=\sqrt{\widehat{\operatorname{Var}}_{\mathrm{HAC}}(\hat\alpha)}$,
+and the individual test of $H_0:\alpha_i=0$ uses
+\begin{equation}\label{eq:alpha-tstat}
+t_i=\frac{\hat\alpha_i}{\mathrm{SE}_{\mathrm{HAC}}(\hat\alpha_i)},
+\qquad p_i = 2\,\Phi(-\lvert t_i\rvert),
+\end{equation}
+a large-sample normal reference; the 25 resulting $p$-values are then
+false-discovery-controlled (\S\ref{prelim-fdr}). Two goodness-of-fit
+summaries accompany each fit: the coefficient of determination
+$R^2=1-\mathrm{SSE}/\mathrm{SST}$ (the share of the portfolio's return
+variance explained by the factors) and the residual volatility
+$\hat\sigma_\varepsilon=\operatorname{sd}(e)$.
+
+\textbf{A standard error is not a return volatility.} The alpha standard
+error measures how much $\hat\alpha$ would move across resamples of the
+history; the residual volatility $\hat\sigma_\varepsilon$ measures how much
+the portfolio's monthly abnormal return scatters around the fit. They are
+different quantities with different units of interpretation, and conflating
+them is a frequent error: a portfolio can have a precisely estimated alpha
+(small $\mathrm{SE}$) yet volatile residuals (large
+$\hat\sigma_\varepsilon$), or vice versa.
 
 \hypertarget{toy-example-interpretation}{%
 \section{Interpretation}\label{toy-example-interpretation}}
@@ -80,7 +169,31 @@ joint HAC construction.
 
 \textbf{Alpha is not automatically skill.} For passive characteristic
 portfolios, a non-zero alpha is better described as a pricing error or
-benchmark-relative residual mean. The benchmark may be incomplete.
+benchmark-relative residual mean. The benchmark may be incomplete, so the
+same interpretive caution as in \S\ref{rq-model-relative} applies:
+$\hat\alpha$ measures return unexplained by \emph{these} factors, not by
+every source of risk.
+
+\textbf{What ``conditional on the other factors'' means.} The loading
+$\beta_{i,H}$ on HML is not the simple regression slope of $y_i$ on HML; it
+is a \emph{partial} slope. By the Frisch--Waugh--Lovell theorem, $\hat\beta_{i,H}$
+equals the slope from regressing $y_i$ on the residual of HML after HML has
+itself been projected on the constant and the other factors
+$(\mathrm{Mkt}\!-\!\mathrm{RF},\mathrm{SMB})$. Equivalently, partialling the
+other regressors out of both sides isolates the sensitivity to the part of
+HML that is orthogonal to the remaining factors. This is why a loading can
+change --- even flip sign --- when a factor is added or removed, and it is
+the mechanism behind the benchmark dependence of alpha discussed in
+\S\ref{rq-difficulties}: moving from FF3 to FF5 re-partials every loading
+and therefore re-defines the intercept.
+
+\textbf{The constant-beta assumption.} Within one estimation window the
+loadings $\beta_i$ are treated as constant. If the true exposures drift
+over the window, the drift is absorbed into the residual $\varepsilon_{it}$,
+where it can inflate residual dependence or masquerade as alpha. This is
+one reason the study estimates on rolling windows (Chapter~10) and relies
+on HAC inference rather than the classical variance: the linear,
+constant-$\beta$ model is a local approximation, not a literal truth.
 
 \hypertarget{complete-numerical-toy-regression}{%
 \section{Complete numerical toy
@@ -104,15 +217,16 @@ Month & f & Portfolio A y & Portfolio B y & Portfolio C y \\
 5 & 2 & 2.30 & 1.17 & 2.25 \\
 \end{longtable}
 
-Here X={[}1,f{]}. Because \ensuremath{\sum }f\textsubscript{t}=0 and
-\ensuremath{\sum }f\textsuperscript{2}\textsubscript{t}=10,
-
-\[
-X{}^{\prime}X = [[5,0],[0,10]], (X{}^{\prime}X)^{-1} = [[1/5,0],[0,1/10]].
-\]
-
-Therefore \ensuremath{\hat{\alpha }} is the sample mean and
-\ensuremath{\hat{\beta }}=(\ensuremath{\sum }f\textsubscript{t}y\textsubscript{t})/(\ensuremath{\sum }f\textsuperscript{2}\textsubscript{t}). The
+Here $X=[\,\mathbf 1,\ f\,]$. Because $\sum_t f_t=0$ and $\sum_t f_t^2=10$,
+\begin{equation}\label{eq:toy-xtx}
+X^{\top}X = \begin{bmatrix}5 & 0\\ 0 & 10\end{bmatrix},
+\qquad
+(X^{\top}X)^{-1} = \begin{bmatrix}1/5 & 0\\ 0 & 1/10\end{bmatrix}.
+\end{equation}
+The orthogonality of the constant and the centred factor diagonalises
+$X^{\top}X$, so the intercept and slope decouple: $\hat\alpha$ is simply
+the sample mean $\tfrac15\sum_t y_t$, and
+$\hat\beta = \bigl(\sum_t f_t y_t\bigr)/\bigl(\sum_t f_t^2\bigr)$. The
 fitted results are
 
 \begin{longtable}[]{@{}p{0.10\textwidth}p{0.16\textwidth}p{0.16\textwidth}p{0.16\textwidth}p{0.26\textwidth}@{}}
