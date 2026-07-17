@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
 
 import numpy as np
@@ -191,6 +192,27 @@ def _first_monthly_block(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _read_french_csv(path: Path) -> pd.DataFrame:
+    """Read cleaned or original Ken French CSV text without altering bytes.
+
+    Original library downloads contain prose before the first comma-prefixed
+    monthly header. Cleaned project inputs start directly at that header. In
+    both cases, the returned frame begins at the first header followed by a
+    YYYYMM record; later blocks remain available to ``_first_monthly_block``.
+    """
+
+    text = Path(path).read_text(encoding="utf-8-sig", errors="strict")
+    lines = text.splitlines()
+    header_index = None
+    for idx, line in enumerate(lines[:-1]):
+        if line.lstrip().startswith(",") and lines[idx + 1].lstrip()[:6].isdigit():
+            header_index = idx
+            break
+    if header_index is None:
+        raise ValueError(f"No monthly CSV header found in {path}.")
+    return pd.read_csv(StringIO("\n".join(lines[header_index:])))
+
+
 def _parse_yyyymm(values: pd.Series) -> pd.Series:
     text = _normalise_date_text(values)
     if not text.str.fullmatch(r"\d{6}").all():
@@ -210,7 +232,7 @@ def _to_decimal(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
 def load_ff_factors(ff_file: Path) -> pd.DataFrame:
     """Load the first monthly Fama-French factor panel from a CSV file."""
 
-    ff = _first_monthly_block(pd.read_csv(ff_file))
+    ff = _first_monthly_block(_read_french_csv(ff_file))
     ff.columns = [_normalise_column_name(c) for c in ff.columns]
     ff.rename(columns={"mktrf": "mkt_rf"}, inplace=True)
     ff.replace(MISSING_SENTINELS, np.nan, inplace=True)
@@ -225,7 +247,7 @@ def load_ff_factors(ff_file: Path) -> pd.DataFrame:
 def load_portfolios(port_file: Path) -> pd.DataFrame:
     """Load the first monthly portfolio-return panel from a CSV file."""
 
-    ports = _first_monthly_block(pd.read_csv(port_file))
+    ports = _first_monthly_block(_read_french_csv(port_file))
     ports.columns = [str(c).strip() for c in ports.columns]
     ports.replace(MISSING_SENTINELS, np.nan, inplace=True)
     ports["date"] = _parse_yyyymm(ports["date"])

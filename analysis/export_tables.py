@@ -79,25 +79,25 @@ def main() -> None:
         df_to_latex(
             performance,
             "table_performance_rankings.tex",
-            "HAC and Shrinkage-Adjusted Performance Rankings",
+            "Joint-HAC and Multivariate-Shrinkage Performance Rankings",
             "tab:performance_rankings",
         ),
         df_to_latex(
             persistence,
             "table_rank_persistence.tex",
-            "Rank Persistence Across Rolling Windows",
+            "Overlap-Labelled Rank Persistence Across Rolling Windows",
             "tab:rank_persistence",
         ),
         df_to_latex(
             transition,
             "table_quintile_transitions.tex",
-            "Quintile Transition Probabilities",
+            "Non-Overlapping 120-Month Quintile Transition Probabilities",
             "tab:quintile_transitions",
         ),
         df_to_latex(
             mobility,
             "table_quintile_mobility.tex",
-            "Portfolio-Level Quintile Mobility Metrics",
+            "Portfolio-Level Non-Overlapping Quintile Mobility Metrics",
             "tab:quintile_mobility",
         ),
     ]

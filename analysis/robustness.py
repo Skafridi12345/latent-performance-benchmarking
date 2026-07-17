@@ -132,9 +132,7 @@ def rolling_window_sensitivity(
                 )
                 if len(rank_correlations) > 1
                 else np.nan,
-                "AE_correlation_window_std": float(
-                    np.nanstd(ae_correlations, ddof=1)
-                )
+                "AE_correlation_window_std": float(np.nanstd(ae_correlations, ddof=1))
                 if len(ae_correlations) > 1
                 else np.nan,
                 "top_quintile_jaccard": float(np.nanmean(top_scores)),
@@ -202,30 +200,14 @@ def performance_window_sensitivity(
                 )
             top_scores.append(
                 _jaccard(
-                    set(
-                        group.loc[
-                            group[f"quintile_{left_window}"] == 5, "portfolio"
-                        ]
-                    ),
-                    set(
-                        group.loc[
-                            group[f"quintile_{right_window}"] == 5, "portfolio"
-                        ]
-                    ),
+                    set(group.loc[group[f"quintile_{left_window}"] == 5, "portfolio"]),
+                    set(group.loc[group[f"quintile_{right_window}"] == 5, "portfolio"]),
                 )
             )
             bottom_scores.append(
                 _jaccard(
-                    set(
-                        group.loc[
-                            group[f"quintile_{left_window}"] == 1, "portfolio"
-                        ]
-                    ),
-                    set(
-                        group.loc[
-                            group[f"quintile_{right_window}"] == 1, "portfolio"
-                        ]
-                    ),
+                    set(group.loc[group[f"quintile_{left_window}"] == 1, "portfolio"]),
+                    set(group.loc[group[f"quintile_{right_window}"] == 1, "portfolio"]),
                 )
             )
         rows.append(
@@ -275,8 +257,10 @@ def model_comparison(
             "AIC",
             "BIC",
             "converged",
-            "boundary_mixture_p_value",
-            "one_sided_component_supported",
+            "sfa_boundary_p_value",
+            "sfa_boundary_q_value",
+            "sfa_supported_nominal_5pct",
+            "sfa_supported_fdr_5pct",
         ]
     ].rename(
         columns={
@@ -286,10 +270,10 @@ def model_comparison(
             "AIC": "AIC_half_normal",
             "BIC": "BIC_half_normal",
             "converged": "converged_half_normal",
-            "boundary_mixture_p_value": "boundary_mixture_p_value_half_normal",
-            "one_sided_component_supported": (
-                "one_sided_component_supported_half_normal"
-            ),
+            "sfa_boundary_p_value": "sfa_boundary_p_value_half_normal",
+            "sfa_boundary_q_value": "sfa_boundary_q_value_half_normal",
+            "sfa_supported_nominal_5pct": "sfa_supported_nominal_5pct_half_normal",
+            "sfa_supported_fdr_5pct": "sfa_supported_fdr_5pct_half_normal",
         }
     )
     right = truncated_scores[
@@ -309,7 +293,7 @@ def model_comparison(
     merged["rank_difference"] = (
         merged["AE_rank_half_normal"] - merged["AE_rank_truncated_normal"]
     )
-    valid = merged["one_sided_component_supported_half_normal"].fillna(False)
+    valid = merged["sfa_supported_fdr_5pct_half_normal"].fillna(False)
     merged["valid_for_cross_distribution_rank_comparison"] = valid
     if int(valid.sum()) >= 3:
         merged["rank_spearman"] = spearmanr(

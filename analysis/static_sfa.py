@@ -5,8 +5,36 @@ import time
 import numpy as np
 import pandas as pd
 
+from analysis.latent_performance import benjamini_hochberg
 from sfa.loaders import design_matrix
 from sfa.models import make_sfa_model, normalise_model_type
+
+
+def apply_sfa_multiple_testing(scores: pd.DataFrame) -> pd.DataFrame:
+    """Apply the cross-sectional BH decision rule to SFA boundary tests."""
+
+    out = scores.copy()
+    if "sfa_boundary_p_value" not in out:
+        out["sfa_boundary_p_value"] = np.nan
+    p_values = pd.to_numeric(out["sfa_boundary_p_value"], errors="coerce")
+    valid = p_values.notna() & p_values.between(0.0, 1.0)
+    out["sfa_boundary_q_value"] = benjamini_hochberg(p_values.to_numpy(float))
+    nominal = pd.Series(pd.NA, index=out.index, dtype="boolean")
+    fdr = pd.Series(pd.NA, index=out.index, dtype="boolean")
+    nominal.loc[valid] = p_values.loc[valid] < 0.05
+    fdr.loc[valid] = out.loc[valid, "sfa_boundary_q_value"] < 0.05
+    out["sfa_supported_nominal_5pct"] = nominal
+    out["sfa_supported_fdr_5pct"] = fdr
+    rankable = (
+        out.get("AE", pd.Series(np.nan, index=out.index)).notna()
+        & out.get("converged", pd.Series(False, index=out.index)).fillna(False)
+        & out["sfa_supported_fdr_5pct"].fillna(False)
+    )
+    out["sfa_rank"] = pd.Series(pd.NA, index=out.index, dtype="Int64")
+    out.loc[rankable, "sfa_rank"] = (
+        out.loc[rankable, "AE"].rank(ascending=False, method="first").astype("Int64")
+    )
+    return out
 
 
 def estimate_static_sfa(
@@ -85,10 +113,10 @@ def estimate_static_sfa(
                     getattr(fit, "normal_log_likelihood", np.nan)
                 ),
                 "boundary_lr_stat": float(getattr(fit, "boundary_lr_stat", np.nan)),
-                "boundary_mixture_p_value": float(
+                "sfa_boundary_p_value": float(
                     getattr(fit, "boundary_mixture_p_value", np.nan)
                 ),
-                "one_sided_component_supported": getattr(
+                "sfa_supported_nominal_5pct": getattr(
                     fit, "one_sided_component_supported", pd.NA
                 ),
                 "residual_mean": float(np.mean(fit.residuals)),
@@ -119,16 +147,20 @@ def estimate_static_sfa(
 
     scores = pd.DataFrame(rows)
     if not scores.empty and "AE" in scores:
-        valid = scores["AE"].notna() & scores["converged"].fillna(False)
-        if model_key == "half_normal" and "one_sided_component_supported" in scores:
-            valid &= scores["one_sided_component_supported"].fillna(False)
-        scores["AE_rank"] = pd.Series(pd.NA, index=scores.index, dtype="Int64")
-        scores.loc[valid, "AE_rank"] = (
-            scores.loc[valid, "AE"]
-            .rank(ascending=False, method="first")
-            .astype("Int64")
-        )
-        scores = scores.sort_values("AE_rank", na_position="last").reset_index(
+        if model_key == "half_normal":
+            scores = apply_sfa_multiple_testing(scores)
+        else:
+            valid = scores["AE"].notna() & scores["converged"].fillna(False)
+            scores["sfa_rank"] = pd.Series(pd.NA, index=scores.index, dtype="Int64")
+            scores.loc[valid, "sfa_rank"] = (
+                scores.loc[valid, "AE"]
+                .rank(ascending=False, method="first")
+                .astype("Int64")
+            )
+        # Compatibility alias for downstream comparison code. It has exactly
+        # the same FDR eligibility as the explicit SFA rank.
+        scores["AE_rank"] = scores["sfa_rank"]
+        scores = scores.sort_values("sfa_rank", na_position="last").reset_index(
             drop=True
         )
 

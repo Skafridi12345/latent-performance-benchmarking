@@ -3,9 +3,16 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize_scalar
-from scipy.stats import norm, spearmanr
+from scipy.stats import chi2, f, norm, spearmanr
 
 from sfa.loaders import design_matrix
+
+FORWARD_SPREAD_COLUMN = (
+    "average_top_quintile_minus_average_bottom_quintile_forward_alpha_annualized_bps"
+)
+FORWARD_SPREAD_MEAN_COLUMN = f"mean_{FORWARD_SPREAD_COLUMN}"
+FORWARD_SPREAD_MEDIAN_COLUMN = f"median_{FORWARD_SPREAD_COLUMN}"
+FORWARD_SPREAD_IQR_COLUMN = f"iqr_{FORWARD_SPREAD_COLUMN}"
 
 
 def benjamini_hochberg(p_values: np.ndarray) -> np.ndarray:
@@ -13,12 +20,14 @@ def benjamini_hochberg(p_values: np.ndarray) -> np.ndarray:
 
     p = np.asarray(p_values, dtype=float)
     out = np.full_like(p, np.nan)
-    valid = np.isfinite(p)
+    valid = np.isfinite(p) & (p >= 0.0) & (p <= 1.0)
     if not valid.any():
         return out
 
-    pv = np.clip(p[valid], 0.0, 1.0)
-    order = np.argsort(pv)
+    pv = p[valid]
+    # Stable sorting makes tied p-values deterministic without changing their
+    # identical BH-adjusted q-values.
+    order = np.argsort(pv, kind="mergesort")
     ranked = pv[order]
     m = len(ranked)
     adjusted = ranked * m / np.arange(1, m + 1)
@@ -62,6 +71,75 @@ def newey_west_covariance(
     correction = n / max(n - k, 1)
     covariance = correction * bread @ meat @ bread
     return (covariance + covariance.T) / 2.0
+
+
+def joint_newey_west_alpha_covariance(
+    X: np.ndarray,
+    residuals: np.ndarray,
+    *,
+    max_lags: int,
+    eigenvalue_tolerance: float = 1e-10,
+    condition_limit: float = 1e12,
+) -> tuple[np.ndarray, dict]:
+    """Estimate the full cross-portfolio HAC covariance of OLS alphas.
+
+    ``residuals`` is a balanced ``time x portfolio`` matrix. The common-date
+    score vectors retain contemporaneous and lagged cross-portfolio dependence.
+    Only a scale-relative numerical eigenvalue floor is permitted; a materially
+    indefinite covariance raises instead of being silently regularised.
+    """
+
+    X = np.asarray(X, dtype=float)
+    residuals = np.asarray(residuals, dtype=float)
+    if X.ndim != 2 or residuals.ndim != 2 or len(X) != len(residuals):
+        raise ValueError("X and residual matrix have incompatible shapes.")
+    if not np.isfinite(X).all() or not np.isfinite(residuals).all():
+        raise ValueError("Joint HAC inputs must contain finite values.")
+    n, k = X.shape
+    if n <= k:
+        raise ValueError("Joint HAC requires more observations than regressors.")
+
+    lags = int(max(0, min(max_lags, n - 1)))
+    bread = np.linalg.pinv(X.T @ X)
+    alpha_weights = X @ bread[:, 0]
+    scores = residuals * alpha_weights[:, None]
+    covariance = scores.T @ scores
+    for lag in range(1, lags + 1):
+        weight = 1.0 - lag / (lags + 1.0)
+        gamma = scores[lag:].T @ scores[:-lag]
+        covariance += weight * (gamma + gamma.T)
+    covariance *= n / (n - k)
+    covariance = (covariance + covariance.T) / 2.0
+
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+    scale = max(float(np.max(np.abs(eigenvalues))), np.finfo(float).tiny)
+    negative_tolerance = eigenvalue_tolerance * scale
+    min_eigenvalue_raw = float(eigenvalues[0])
+    if min_eigenvalue_raw < -negative_tolerance:
+        raise ValueError(
+            "Joint HAC covariance is materially indefinite: "
+            f"minimum eigenvalue {min_eigenvalue_raw:.3e}."
+        )
+    floor = max(scale / condition_limit, np.finfo(float).eps * scale)
+    adjusted = np.maximum(eigenvalues, floor)
+    covariance = (eigenvectors * adjusted) @ eigenvectors.T
+    covariance = (covariance + covariance.T) / 2.0
+    condition_number = float(adjusted[-1] / adjusted[0])
+    metadata = {
+        "hac_lags": lags,
+        "n_observations": int(n),
+        "n_regressors": int(k),
+        "n_portfolios": int(residuals.shape[1]),
+        "minimum_eigenvalue_raw": min_eigenvalue_raw,
+        "minimum_eigenvalue_used": float(adjusted[0]),
+        "maximum_eigenvalue": float(adjusted[-1]),
+        "condition_number": condition_number,
+        "eigenvalue_floor": float(floor),
+        "eigenvalues_floored": int(np.sum(eigenvalues < floor)),
+        "finite_sample_correction": float(n / (n - k)),
+        "kernel": "Bartlett",
+    }
+    return covariance, metadata
 
 
 def estimate_hac_factor_model(
@@ -132,9 +210,7 @@ def _profile_prior(alpha: np.ndarray, se: np.ndarray) -> dict:
         variance = se2 + max(float(tau2), 0.0)
         weights = 1.0 / variance
         mu = float(np.sum(weights * alpha) / np.sum(weights))
-        objective = 0.5 * float(
-            np.sum(np.log(variance) + (alpha - mu) ** 2 / variance)
-        )
+        objective = 0.5 * float(np.sum(np.log(variance) + (alpha - mu) ** 2 / variance))
         return objective, mu
 
     empirical_variance = float(np.var(alpha, ddof=1))
@@ -165,6 +241,7 @@ def hierarchical_shrinkage(
     alpha_col: str = "alpha",
     se_col: str = "alpha_hac_se",
     p_value_col: str = "alpha_p_value",
+    sampling_covariance: np.ndarray | None = None,
 ) -> tuple[pd.DataFrame, dict]:
     """Shrink noisy portfolio alphas toward an estimated common prior.
 
@@ -181,30 +258,76 @@ def hierarchical_shrinkage(
     out = estimates.copy()
     alpha = out[alpha_col].to_numpy(float)
     se = out[se_col].to_numpy(float)
-    prior = _profile_prior(alpha, se)
-    tau2 = prior["tau2"]
-    se2 = se**2
-    denominator = tau2 + se2
-    shrinkage_weight = np.divide(
-        tau2,
-        denominator,
-        out=np.zeros_like(se2),
-        where=denominator > 0,
+    if sampling_covariance is None:
+        sampling_covariance = np.diag(se**2)
+    covariance = np.asarray(sampling_covariance, dtype=float)
+    if covariance.shape != (len(alpha), len(alpha)):
+        raise ValueError("Sampling covariance has the wrong cross-sectional shape.")
+    if not np.isfinite(covariance).all():
+        raise ValueError("Sampling covariance must be finite.")
+    covariance = (covariance + covariance.T) / 2.0
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+    scale = max(float(np.max(np.abs(eigenvalues))), np.finfo(float).tiny)
+    if eigenvalues[0] < -1e-10 * scale:
+        raise ValueError("Sampling covariance is materially indefinite.")
+    floor = max(scale * 1e-12, np.finfo(float).eps * scale)
+    covariance_eigenvalues = np.maximum(eigenvalues, floor)
+    covariance = (eigenvectors * covariance_eigenvalues) @ eigenvectors.T
+
+    ones = np.ones(len(alpha))
+
+    def profile_joint(tau2: float) -> tuple[float, float, float, np.ndarray]:
+        marginal_eigenvalues = covariance_eigenvalues + max(float(tau2), 0.0)
+        inv = (eigenvectors * (1.0 / marginal_eigenvalues)) @ eigenvectors.T
+        inv_ones = inv @ ones
+        information = float(ones @ inv_ones)
+        mu = float((inv_ones @ alpha) / information)
+        centered = alpha - mu
+        objective = 0.5 * float(
+            np.sum(np.log(marginal_eigenvalues)) + centered @ inv @ centered
+        )
+        return objective, mu, information, inv
+
+    empirical_variance = float(np.var(alpha, ddof=1))
+    upper = max(
+        empirical_variance * 25.0,
+        float(np.max(np.diag(covariance))) * 10.0,
+        1e-10,
     )
-    posterior_alpha = (
-        shrinkage_weight * alpha + (1.0 - shrinkage_weight) * prior["mu"]
+    opt = minimize_scalar(
+        lambda tau2: profile_joint(tau2)[0],
+        bounds=(0.0, upper),
+        method="bounded",
+        options={"xatol": max(upper * 1e-10, 1e-16)},
     )
-    conditional_variance = np.divide(
-        tau2 * se2,
-        denominator,
-        out=np.zeros_like(se2),
-        where=denominator > 0,
+    tau2 = max(float(opt.x), 0.0)
+    objective, mu, information, marginal_inverse = profile_joint(tau2)
+    mu_se = float(1.0 / np.sqrt(information))
+    prior = {
+        "mu": mu,
+        "mu_se": mu_se,
+        "tau2": tau2,
+        "tau": float(np.sqrt(tau2)),
+        "marginal_objective": objective,
+        "converged": bool(opt.success),
+        "covariance_model": "full_joint_hac"
+        if not np.allclose(covariance, np.diag(np.diag(covariance)))
+        else "diagonal_hac",
+        "sampling_covariance_condition_number": float(
+            covariance_eigenvalues[-1] / covariance_eigenvalues[0]
+        ),
+        "sampling_covariance_eigenvalue_floor": float(floor),
+    }
+    shrinkage_matrix = tau2 * marginal_inverse
+    posterior_alpha = mu * ones + shrinkage_matrix @ (alpha - mu * ones)
+    conditional_covariance = tau2 * np.eye(len(alpha)) - (tau2**2 * marginal_inverse)
+    hypermean_loading = (np.eye(len(alpha)) - shrinkage_matrix) @ ones
+    posterior_covariance = conditional_covariance + mu_se**2 * np.outer(
+        hypermean_loading, hypermean_loading
     )
-    # Include first-order uncertainty in the estimated common mean. This avoids
-    # spuriously zero intervals when the cross-sectional heterogeneity is small.
-    posterior_variance = conditional_variance + (
-        (1.0 - shrinkage_weight) * prior["mu_se"]
-    ) ** 2
+    posterior_covariance = (posterior_covariance + posterior_covariance.T) / 2.0
+    posterior_variance = np.maximum(np.diag(posterior_covariance), 0.0)
+    shrinkage_weight = np.diag(shrinkage_matrix)
     posterior_sd = np.sqrt(np.maximum(posterior_variance, 0.0))
     standardized_alpha = np.zeros_like(posterior_alpha)
     np.divide(
@@ -230,14 +353,81 @@ def hierarchical_shrinkage(
     out["posterior_shortfall_annualized_bps"] = np.maximum(
         -out["posterior_alpha_annualized_bps"], 0.0
     )
-    out["alpha_fdr_q_value"] = benjamini_hochberg(
-        out[p_value_col].to_numpy(float)
-    )
+    out["alpha_fdr_q_value"] = benjamini_hochberg(out[p_value_col].to_numpy(float))
     out["performance_rank"] = (
         out["posterior_alpha"].rank(ascending=False, method="first").astype(int)
     )
-    out = out.sort_values("performance_rank").reset_index(drop=True)
+    order = out.sort_values("performance_rank").index.to_numpy()
+    out = out.loc[order].reset_index(drop=True)
+    # Matrices are attached to the prior payload for downstream persistence and
+    # audit output; scalar fields remain directly serialisable as a one-row CSV.
+    prior["posterior_covariance"] = posterior_covariance[np.ix_(order, order)]
+    prior["shrinkage_matrix"] = shrinkage_matrix[np.ix_(order, order)]
+    prior["matrix_portfolio_order"] = out["portfolio"].tolist()
     return out, prior
+
+
+def joint_alpha_tests(
+    alpha: np.ndarray,
+    residuals: np.ndarray,
+    factors: np.ndarray,
+    hac_covariance: np.ndarray,
+) -> pd.DataFrame:
+    """Return conventional GRS and dependence-robust HAC/Wald joint tests."""
+
+    alpha = np.asarray(alpha, dtype=float)
+    residuals = np.asarray(residuals, dtype=float)
+    factors = np.asarray(factors, dtype=float)
+    hac_covariance = np.asarray(hac_covariance, dtype=float)
+    t_obs, n_assets = residuals.shape
+    n_factors = factors.shape[1]
+    if alpha.shape != (n_assets,) or factors.shape[0] != t_obs:
+        raise ValueError("Joint alpha-test inputs have incompatible shapes.")
+    if t_obs <= n_assets + n_factors:
+        raise ValueError("GRS degrees of freedom are not positive.")
+
+    residual_covariance = residuals.T @ residuals / t_obs
+    centered_factors = factors - factors.mean(axis=0)
+    factor_covariance = centered_factors.T @ centered_factors / t_obs
+    alpha_quadratic = float(alpha @ np.linalg.solve(residual_covariance, alpha))
+    factor_mean = factors.mean(axis=0)
+    denominator = 1.0 + float(
+        factor_mean @ np.linalg.solve(factor_covariance, factor_mean)
+    )
+    grs_stat = ((t_obs - n_assets - n_factors) / n_assets) * (
+        alpha_quadratic / denominator
+    )
+    grs_p = float(f.sf(grs_stat, n_assets, t_obs - n_assets - n_factors))
+
+    hac_wald = float(alpha @ np.linalg.solve(hac_covariance, alpha))
+    hac_p = float(chi2.sf(hac_wald, n_assets))
+    grs_reference = f"F({n_assets}, {t_obs - n_assets - n_factors})"
+    return pd.DataFrame(
+        [
+            {
+                "test": "GRS",
+                "statistic": grs_stat,
+                "p_value": grs_p,
+                "reference_distribution": grs_reference,
+                "robust_to_serial_and_cross_portfolio_dependence": False,
+                "role": "secondary_non_iid_benchmark",
+                "n_observations": t_obs,
+                "n_portfolios": n_assets,
+                "n_factors": n_factors,
+            },
+            {
+                "test": "HAC_Wald",
+                "statistic": hac_wald,
+                "p_value": hac_p,
+                "reference_distribution": f"chi2({n_assets})",
+                "robust_to_serial_and_cross_portfolio_dependence": True,
+                "role": "primary_joint_test",
+                "n_observations": t_obs,
+                "n_portfolios": n_assets,
+                "n_factors": n_factors,
+            },
+        ]
+    )
 
 
 def estimate_cross_sectional_performance(
@@ -247,7 +437,7 @@ def estimate_cross_sectional_performance(
     factor_model: str,
     min_obs: int = 60,
     hac_lags: int = 12,
-) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+) -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame]:
     """Estimate HAC factor alphas and shrink them on a common cross-section."""
 
     rows: list[dict] = []
@@ -295,10 +485,36 @@ def estimate_cross_sectional_performance(
 
     estimates = pd.DataFrame(rows)
     if estimates.empty:
-        return estimates, pd.DataFrame(), {}
-    scores, prior = hierarchical_shrinkage(estimates)
+        return estimates, pd.DataFrame(), {}, pd.DataFrame()
     residuals = pd.concat(residual_rows, ignore_index=True)
-    return scores, residuals, prior
+    portfolios = estimates["portfolio"].tolist()
+    dates = pd.Index(sorted(pd.to_datetime(df["date"]).unique()))
+    residual_matrix = residuals.pivot(
+        index="date", columns="portfolio", values="residual"
+    ).reindex(index=dates, columns=portfolios)
+    if residual_matrix.isna().any().any():
+        raise ValueError("Joint HAC requires a balanced common-date residual panel.")
+    first = (
+        df[df["portfolio"] == portfolios[0]]
+        .set_index("date")
+        .reindex(dates)
+        .reset_index()
+    )
+    X = design_matrix(first, factor_cols)
+    joint_covariance, covariance_meta = joint_newey_west_alpha_covariance(
+        X,
+        residual_matrix.to_numpy(float),
+        max_lags=hac_lags,
+    )
+    scores, prior = hierarchical_shrinkage(
+        estimates, sampling_covariance=joint_covariance
+    )
+    prior.update({f"joint_hac_{key}": value for key, value in covariance_meta.items()})
+    covariance_frame = pd.DataFrame(
+        joint_covariance, index=portfolios, columns=portfolios
+    )
+    covariance_frame.index.name = "portfolio"
+    return scores, residuals, prior, covariance_frame
 
 
 def rolling_cross_sectional_performance(
@@ -326,7 +542,7 @@ def rolling_cross_sectional_performance(
     for end in range(start_end, len(dates) + 1, step):
         window_dates = dates[end - window : end]
         sample = df[df["date"].isin(window_dates)].copy()
-        scores, _, prior = estimate_cross_sectional_performance(
+        scores, _, prior, _ = estimate_cross_sectional_performance(
             sample,
             factor_cols,
             factor_model=factor_model,
@@ -388,8 +604,7 @@ def forward_performance_validation(
         if len(future_dates) < forward_months:
             continue
         future = data[
-            (data["portfolio"] == row.portfolio)
-            & (data["date"].isin(future_dates))
+            (data["portfolio"] == row.portfolio) & (data["date"].isin(future_dates))
         ].sort_values("date")
         if len(future) != forward_months:
             continue
@@ -426,6 +641,8 @@ def forward_performance_validation(
         )
         top = group.loc[group["quintile"] == 5, "forward_alpha_monthly"]
         bottom = group.loc[group["quintile"] == 1, "forward_alpha_monthly"]
+        best = group.nsmallest(1, "performance_rank")["forward_alpha_monthly"].iat[0]
+        worst = group.nlargest(1, "performance_rank")["forward_alpha_monthly"].iat[0]
         summary_rows.append(
             {
                 "window_end": pd.Timestamp(window_end),
@@ -435,11 +652,18 @@ def forward_performance_validation(
                 "n_portfolios": int(len(group)),
                 "rank_vs_forward_alpha_spearman": float(rho),
                 "rank_vs_forward_alpha_p_value": float(p_value),
-                "top_minus_bottom_forward_alpha_annualized_bps": float(
+                FORWARD_SPREAD_COLUMN: float(
                     (top.mean() - bottom.mean()) * 12.0 * 10_000.0
                 )
                 if len(top) and len(bottom)
                 else np.nan,
+                "best_ranked_minus_worst_ranked_forward_alpha_annualized_bps": float(
+                    (best - worst) * 12.0 * 10_000.0
+                ),
+                "ranking_uses_average_within_quintiles": True,
+                "factor_loadings_frozen_at_training_end": True,
+                "future_outcomes_excluded_from_score_estimation": True,
+                "leakage_check_passed": bool(group["forward_start"].min() > window_end),
                 "look_ahead_free": True,
             }
         )
@@ -453,9 +677,10 @@ def summarize_forward_validation(
 ) -> pd.DataFrame:
     """Summarise forward validation with time-series HAC uncertainty.
 
-    Rank correlations are averaged on the Fisher-z scale. The top-minus-bottom
-    spread is averaged in annualised basis points. Both standard errors allow
-    for serial dependence across validation windows.
+    Rank correlations are averaged on the Fisher-z scale. The average top-
+    quintile minus average bottom-quintile spread is averaged in annualised
+    basis points. Both standard errors allow for serial dependence across
+    validation windows.
     """
 
     required = {
@@ -463,7 +688,7 @@ def summarize_forward_validation(
         "forward_start",
         "forward_end",
         "rank_vs_forward_alpha_spearman",
-        "top_minus_bottom_forward_alpha_annualized_bps",
+        FORWARD_SPREAD_COLUMN,
         "look_ahead_free",
     }
     missing = sorted(required - set(forward_summary.columns))
@@ -474,12 +699,9 @@ def summarize_forward_validation(
 
     data = forward_summary.sort_values("window_end").copy()
     correlations = data["rank_vs_forward_alpha_spearman"].to_numpy(float)
-    correlations = np.clip(
-        correlations[np.isfinite(correlations)], -0.999999, 0.999999
-    )
-    spreads = data[
-        "top_minus_bottom_forward_alpha_annualized_bps"
-    ].to_numpy(float)
+    correlations = np.clip(correlations[np.isfinite(correlations)], -0.999999, 0.999999)
+    spread_column = FORWARD_SPREAD_COLUMN
+    spreads = data[spread_column].to_numpy(float)
     spreads = spreads[np.isfinite(spreads)]
     if len(correlations) < 2 or len(spreads) < 2:
         raise ValueError("At least two valid validation windows are required.")
@@ -503,46 +725,117 @@ def summarize_forward_validation(
         [
             {
                 "n_validation_windows": int(len(data)),
-                "first_training_window_end": pd.to_datetime(
-                    data["window_end"]
-                ).min(),
-                "last_training_window_end": pd.to_datetime(
-                    data["window_end"]
-                ).max(),
+                "first_training_window_end": pd.to_datetime(data["window_end"]).min(),
+                "last_training_window_end": pd.to_datetime(data["window_end"]).max(),
                 "all_look_ahead_free": bool(data["look_ahead_free"].all()),
                 "hac_lags": int(hac_lags),
                 "mean_rank_spearman_fisher": float(np.tanh(z_mean)),
                 "rank_spearman_ci_low": float(np.tanh(z_mean - 1.96 * z_se)),
                 "rank_spearman_ci_high": float(np.tanh(z_mean + 1.96 * z_se)),
                 "rank_spearman_hac_p_value": float(z_fit["alpha_p_value"]),
-                "mean_top_minus_bottom_forward_alpha_annualized_bps": float(
-                    spread_mean
+                FORWARD_SPREAD_MEAN_COLUMN: float(spread_mean),
+                FORWARD_SPREAD_MEDIAN_COLUMN: float(np.median(spreads)),
+                FORWARD_SPREAD_IQR_COLUMN: float(
+                    np.quantile(spreads, 0.75) - np.quantile(spreads, 0.25)
                 ),
-                "top_minus_bottom_hac_se_bps": float(spread_se),
-                "top_minus_bottom_ci_low_bps": float(
+                "average_quintile_spread_hac_se_bps": float(spread_se),
+                "average_quintile_spread_ci_low_bps": float(
                     spread_mean - 1.96 * spread_se
                 ),
-                "top_minus_bottom_ci_high_bps": float(
+                "average_quintile_spread_ci_high_bps": float(
                     spread_mean + 1.96 * spread_se
                 ),
-                "top_minus_bottom_hac_p_value": float(
+                "average_quintile_spread_hac_p_value": float(
                     spread_fit["alpha_p_value"]
                 ),
-                "positive_top_minus_bottom_fraction": float(np.mean(spreads > 0)),
+                "positive_average_quintile_spread_fraction": float(
+                    np.mean(spreads > 0)
+                ),
             }
         ]
     )
+
+
+def forward_validation_robustness(
+    forward_summary: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Return decade, leave-one-decade-out, and extreme-window diagnostics."""
+
+    if forward_summary.empty:
+        return pd.DataFrame(), pd.DataFrame()
+    data = forward_summary.copy()
+    data["window_end"] = pd.to_datetime(data["window_end"])
+    data["decade"] = (data["window_end"].dt.year // 10) * 10
+    spread_col = FORWARD_SPREAD_COLUMN
+
+    def row(scope: str, group: pd.DataFrame, omitted: int | None = None) -> dict:
+        spreads = group[spread_col].dropna().to_numpy(float)
+        correlations = group["rank_vs_forward_alpha_spearman"].dropna().to_numpy(float)
+        spread_median = float(np.median(spreads)) if len(spreads) else np.nan
+        spread_iqr = (
+            float(np.quantile(spreads, 0.75) - np.quantile(spreads, 0.25))
+            if len(spreads)
+            else np.nan
+        )
+        return {
+            "scope": scope,
+            "omitted_decade": omitted,
+            "n_validation_windows": int(len(group)),
+            "sample_start": group["window_end"].min(),
+            "sample_end": group["window_end"].max(),
+            "median_rank_spearman": float(np.median(correlations))
+            if len(correlations)
+            else np.nan,
+            "median_average_quintile_spread_bps": spread_median,
+            "average_quintile_spread_iqr_bps": spread_iqr,
+            "positive_average_quintile_spread_fraction": float(np.mean(spreads > 0))
+            if len(spreads)
+            else np.nan,
+        }
+
+    rows = [row("full_sample", data)]
+    for decade, group in data.groupby("decade"):
+        rows.append(row(f"decade_{int(decade)}s", group))
+    for decade in sorted(data["decade"].unique()):
+        rows.append(
+            row(
+                f"leave_{int(decade)}s_out",
+                data[data["decade"] != decade],
+                omitted=int(decade),
+            )
+        )
+
+    extreme_columns = [
+        "window_end",
+        "forward_start",
+        "forward_end",
+        "rank_vs_forward_alpha_spearman",
+        spread_col,
+        "best_ranked_minus_worst_ranked_forward_alpha_annualized_bps",
+    ]
+    lowest = data.nsmallest(min(5, len(data)), spread_col).assign(
+        extreme_type="lowest_average_quintile_spread"
+    )
+    highest = data.nlargest(min(5, len(data)), spread_col).assign(
+        extreme_type="highest_average_quintile_spread"
+    )
+    extremes = pd.concat([lowest, highest], ignore_index=True)[
+        ["extreme_type", *extreme_columns]
+    ]
+    return pd.DataFrame(rows), extremes
 
 
 def block_bootstrap_rank_uncertainty(
     df: pd.DataFrame,
     factor_cols: list[str],
     *,
-    n_bootstrap: int = 200,
+    n_bootstrap: int = 5_000,
     block_length: int = 12,
     hac_lags: int = 12,
     random_seed: int = 2026,
-) -> pd.DataFrame:
+    stability_checkpoint: int | None = None,
+    return_stability: bool = False,
+) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
     """Estimate score and rank uncertainty with a common-date circular bootstrap."""
 
     if n_bootstrap <= 0 or block_length <= 0:
@@ -555,11 +848,7 @@ def block_bootstrap_rank_uncertainty(
 
     arrays: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     for portfolio in portfolios:
-        group = (
-            df[df["portfolio"] == portfolio]
-            .set_index("date")
-            .reindex(dates)
-        )
+        group = df[df["portfolio"] == portfolio].set_index("date").reindex(dates)
         if group[["excess_return", *factor_cols]].isna().any().any():
             raise ValueError("Block bootstrap requires a balanced portfolio panel.")
         arrays[portfolio] = (
@@ -573,16 +862,17 @@ def block_bootstrap_rank_uncertainty(
     for replicate in range(n_bootstrap):
         starts = rng.integers(0, n_dates, size=n_blocks)
         indices = np.concatenate(
-            [
-                (start + np.arange(block_length, dtype=int)) % n_dates
-                for start in starts
-            ]
+            [(start + np.arange(block_length, dtype=int)) % n_dates for start in starts]
         )[:n_dates]
         estimates = []
+        residual_columns = []
+        bootstrap_X: np.ndarray | None = None
         for portfolio in portfolios:
             y_full, factors_full = arrays[portfolio]
             y = y_full[indices]
             X = np.column_stack([np.ones(n_dates), factors_full[indices]])
+            if bootstrap_X is None:
+                bootstrap_X = X
             fit = estimate_hac_factor_model(
                 y,
                 X,
@@ -596,7 +886,17 @@ def block_bootstrap_rank_uncertainty(
                     "alpha_p_value": fit["alpha_p_value"],
                 }
             )
-        scores, _ = hierarchical_shrinkage(pd.DataFrame(estimates))
+            residual_columns.append(fit["residuals"])
+        if bootstrap_X is None:
+            raise RuntimeError("Bootstrap failed to construct a factor design matrix.")
+        joint_covariance, _ = joint_newey_west_alpha_covariance(
+            bootstrap_X,
+            np.column_stack(residual_columns),
+            max_lags=min(hac_lags, max(n_dates // 4, 0)),
+        )
+        scores, _ = hierarchical_shrinkage(
+            pd.DataFrame(estimates), sampling_covariance=joint_covariance
+        )
         scores["bootstrap_replicate"] = int(replicate)
         draws.append(
             scores[
@@ -612,36 +912,67 @@ def block_bootstrap_rank_uncertainty(
     bootstrap = pd.concat(draws, ignore_index=True)
     top_cutoff = max(1, int(np.ceil(len(portfolios) / 5)))
     bottom_cutoff = len(portfolios) - top_cutoff + 1
-    rows = []
-    for portfolio, group in bootstrap.groupby("portfolio"):
-        rows.append(
-            {
-                "portfolio": portfolio,
-                "bootstrap_replicates": int(group["bootstrap_replicate"].nunique()),
-                "bootstrap_posterior_alpha_median": float(
-                    group["posterior_alpha"].median()
-                ),
-                "bootstrap_posterior_alpha_ci_low": float(
-                    group["posterior_alpha"].quantile(0.025)
-                ),
-                "bootstrap_posterior_alpha_ci_high": float(
-                    group["posterior_alpha"].quantile(0.975)
-                ),
-                "bootstrap_rank_median": float(group["performance_rank"].median()),
-                "bootstrap_rank_ci_low": float(
-                    group["performance_rank"].quantile(0.025)
-                ),
-                "bootstrap_rank_ci_high": float(
-                    group["performance_rank"].quantile(0.975)
-                ),
-                "bootstrap_top_quintile_probability": float(
-                    np.mean(group["performance_rank"] <= top_cutoff)
-                ),
-                "bootstrap_bottom_quintile_probability": float(
-                    np.mean(group["performance_rank"] >= bottom_cutoff)
-                ),
-                "bootstrap_block_length_months": int(block_length),
-                "bootstrap_random_seed": int(random_seed),
-            }
-        )
-    return pd.DataFrame(rows).sort_values("portfolio").reset_index(drop=True)
+
+    def summarize(draws_frame: pd.DataFrame) -> pd.DataFrame:
+        rows = []
+        for portfolio, group in draws_frame.groupby("portfolio"):
+            rows.append(
+                {
+                    "portfolio": portfolio,
+                    "bootstrap_replicates": int(group["bootstrap_replicate"].nunique()),
+                    "bootstrap_posterior_alpha_median": float(
+                        group["posterior_alpha"].median()
+                    ),
+                    "bootstrap_posterior_alpha_ci_low": float(
+                        group["posterior_alpha"].quantile(0.025)
+                    ),
+                    "bootstrap_posterior_alpha_ci_high": float(
+                        group["posterior_alpha"].quantile(0.975)
+                    ),
+                    "bootstrap_rank_median": float(group["performance_rank"].median()),
+                    "bootstrap_rank_ci_low": float(
+                        group["performance_rank"].quantile(0.025)
+                    ),
+                    "bootstrap_rank_ci_high": float(
+                        group["performance_rank"].quantile(0.975)
+                    ),
+                    "bootstrap_top_quintile_probability": float(
+                        np.mean(group["performance_rank"] <= top_cutoff)
+                    ),
+                    "bootstrap_bottom_quintile_probability": float(
+                        np.mean(group["performance_rank"] >= bottom_cutoff)
+                    ),
+                    "bootstrap_block_length_months": int(block_length),
+                    "bootstrap_random_seed": int(random_seed),
+                }
+            )
+        return pd.DataFrame(rows).sort_values("portfolio").reset_index(drop=True)
+
+    final = summarize(bootstrap)
+    if not return_stability:
+        return final
+    checkpoint = int(stability_checkpoint or min(1_000, n_bootstrap))
+    if checkpoint <= 0 or checkpoint > n_bootstrap:
+        raise ValueError("Stability checkpoint must be between 1 and n_bootstrap.")
+    early = summarize(bootstrap[bootstrap["bootstrap_replicate"] < checkpoint])
+    metrics = [
+        "bootstrap_posterior_alpha_ci_low",
+        "bootstrap_posterior_alpha_ci_high",
+        "bootstrap_rank_ci_low",
+        "bootstrap_rank_ci_high",
+        "bootstrap_top_quintile_probability",
+        "bootstrap_bottom_quintile_probability",
+    ]
+    stability = early[["portfolio", *metrics]].merge(
+        final[["portfolio", *metrics]],
+        on="portfolio",
+        suffixes=("_checkpoint", "_final"),
+    )
+    for metric in metrics:
+        stability[f"absolute_change_{metric}"] = (
+            stability[f"{metric}_final"] - stability[f"{metric}_checkpoint"]
+        ).abs()
+    stability["checkpoint_replicates"] = checkpoint
+    stability["final_replicates"] = int(n_bootstrap)
+    stability["bootstrap_random_seed"] = int(random_seed)
+    return final, stability

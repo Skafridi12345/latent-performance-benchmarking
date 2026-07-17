@@ -18,9 +18,10 @@ def _ljung_box(residuals: np.ndarray, lags: int) -> tuple[float, float]:
         float(centered[lag:] @ centered[:-lag] / denominator)
         for lag in range(1, use_lags + 1)
     ]
-    q_stat = n * (n + 2.0) * sum(
-        rho**2 / (n - lag)
-        for lag, rho in enumerate(correlations, start=1)
+    q_stat = (
+        n
+        * (n + 2.0)
+        * sum(rho**2 / (n - lag) for lag, rho in enumerate(correlations, start=1))
     )
     return float(q_stat), float(stats.chi2.sf(q_stat, use_lags))
 
@@ -142,8 +143,10 @@ def model_diagnostics(
         "lambda",
         "normal_log_likelihood",
         "boundary_lr_stat",
-        "boundary_mixture_p_value",
-        "one_sided_component_supported",
+        "sfa_boundary_p_value",
+        "sfa_boundary_q_value",
+        "sfa_supported_nominal_5pct",
+        "sfa_supported_fdr_5pct",
         "converged",
         "runtime_seconds",
         "pipeline_runtime_seconds",

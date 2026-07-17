@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -156,24 +157,43 @@ def rank_persistence_plot(persistence: pd.DataFrame, out: Path) -> None:
     plt.close(fig)
 
 
-def transition_heatmap(matrix: pd.DataFrame, out: Path) -> None:
+def transition_heatmap(matrix: pd.DataFrame, summary: pd.DataFrame, out: Path) -> None:
     """Plot the quintile transition matrix as a heatmap."""
 
-    fig, ax = plt.subplots(figsize=(6, 5))
+    baseline = 0.20
+    bound = max(float(np.nanmax(np.abs(matrix.to_numpy(float) - baseline))), 0.05)
+    fig, ax = plt.subplots(figsize=(7.2, 6.0))
     sns.heatmap(
         matrix,
         annot=True,
         fmt=".2f",
-        cmap="Blues",
-        vmin=0,
-        vmax=1,
-        cbar_kws={"label": "Probability"},
+        cmap="vlag",
+        center=baseline,
+        vmin=baseline - bound,
+        vmax=baseline + bound,
+        cbar_kws={"label": "Transition probability (0.20 = uniform)"},
         ax=ax,
     )
     ax.set_xlabel("To quintile")
     ax.set_ylabel("From quintile")
-    ax.set_title("Quintile Transition Matrix")
-    fig.tight_layout()
+    ax.set_title("Quintile Transition Matrix Relative to Uniform Mixing")
+    row_sums = matrix.sum(axis=1)
+    mean_diagonal = float(np.diag(matrix.to_numpy(float)).mean())
+    horizon = int(summary["horizon_months"].iloc[0])
+    n_transitions = int(summary["n_transitions"].iloc[0])
+    ax.text(
+        0.0,
+        -0.18,
+        (
+            f"Horizon: {horizon} months  |  n transitions: {n_transitions:,}  |  "
+            f"row sums: {row_sums.min():.3f}-{row_sums.max():.3f}  |  "
+            f"mean diagonal: {mean_diagonal:.3f}"
+        ),
+        transform=ax.transAxes,
+        fontsize=8.5,
+        color="#444444",
+    )
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
     fig.savefig(out / "transition_matrix_heatmap.png")
     plt.close(fig)
 
@@ -219,25 +239,39 @@ def window_sensitivity_plot(robustness: pd.DataFrame, out: Path) -> None:
 
     data = robustness.copy()
     data["comparison"] = (
-        data["window_left"].astype(str) + " vs " + data["window_right"].astype(str)
+        data["window_left"].astype(str)
+        + "-month vs "
+        + data["window_right"].astype(str)
+        + "-month"
     )
     fig, ax = plt.subplots(figsize=(7, 4.5))
     x = np.arange(len(data))
     width = 0.35
     ax.bar(x - width / 2, data["rank_correlation"], width, label="Rank")
-    score_col = (
-        "score_correlation" if "score_correlation" in data else "AE_correlation"
-    )
+    score_col = "score_correlation" if "score_correlation" in data else "AE_correlation"
     ax.bar(x + width / 2, data[score_col], width, label="Performance score")
     ax.set_xticks(x)
     ax.set_xticklabels(data["comparison"])
     ax.set_ylim(-0.05, 1.05)
-    ax.set_ylabel("Correlation")
-    ax.set_title("Rolling Window Sensitivity")
+    ax.set_ylabel("Correlation at matched window ends")
+    n_comparisons = int(data["n_common_observations"].sum())
+    fig.suptitle("Cross-window Estimator Agreement", fontsize=13, y=0.975)
+    fig.text(
+        0.5,
+        0.925,
+        (
+            f"{n_comparisons:,} matched portfolio-window comparisons; agreement "
+            "across estimator windows, not temporal persistence"
+        ),
+        ha="center",
+        fontsize=8.5,
+        color="#444444",
+    )
     ax.legend(loc="best")
-    fig.tight_layout()
-    fig.savefig(out / "window_sensitivity.png")
+    fig.tight_layout(rect=(0, 0, 1, 0.90))
+    fig.savefig(out / "cross_window_estimator_agreement.png")
     plt.close(fig)
+    (out / "window_sensitivity.png").unlink(missing_ok=True)
 
 
 def residual_diagnostics_plot(residuals: pd.DataFrame, out: Path) -> None:
@@ -347,7 +381,9 @@ def rolling_performance_plot(rolling: pd.DataFrame, out: Path) -> None:
 def forward_validation_plot(forward: pd.DataFrame, out: Path) -> None:
     if forward.empty:
         return
-    data = forward.sort_values("window_end")
+    data = forward.copy()
+    data["window_end"] = pd.to_datetime(data["window_end"])
+    data = data.sort_values("window_end")
     fig, axes = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
     axes[0].plot(
         data["window_end"],
@@ -359,12 +395,18 @@ def forward_validation_plot(forward: pd.DataFrame, out: Path) -> None:
     axes[0].set_title("Look-Ahead-Free Validation Against Future Factor Alpha")
     axes[1].plot(
         data["window_end"],
-        data["top_minus_bottom_forward_alpha_annualized_bps"],
+        data[
+            "average_top_quintile_minus_average_bottom_quintile_"
+            "forward_alpha_annualized_bps"
+        ],
         color="#7c4d79",
     )
     axes[1].axhline(0, color="black", linewidth=1)
-    axes[1].set_ylabel("Top minus bottom (bps/year)")
+    axes[1].set_ylabel("Avg top quintile - avg bottom quintile (bps/year)")
     axes[1].set_xlabel("Training-window end")
+    locator = mdates.AutoDateLocator(minticks=6, maxticks=12)
+    axes[1].xaxis.set_major_locator(locator)
+    axes[1].xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
     fig.tight_layout()
     fig.savefig(out / "forward_performance_validation.png")
     plt.close(fig)
@@ -393,18 +435,28 @@ def rank_uncertainty_plot(scores: pd.DataFrame, out: Path) -> None:
 
 
 def sfa_boundary_plot(sfa_scores: pd.DataFrame, out: Path) -> None:
-    if "boundary_mixture_p_value" not in sfa_scores:
+    if "sfa_boundary_p_value" not in sfa_scores:
         return
-    data = sfa_scores.sort_values("boundary_mixture_p_value", ascending=False)
-    p_values = data["boundary_mixture_p_value"].clip(lower=1e-12)
+    data = sfa_scores.sort_values("sfa_boundary_p_value", ascending=False)
+    p_values = data["sfa_boundary_p_value"].clip(lower=1e-12)
     fig, ax = plt.subplots(figsize=(9, 8))
     ax.barh(data["portfolio"], -np.log10(p_values), color="#777777")
     ax.axvline(
         -np.log10(0.05),
         color="#c44e52",
         linestyle="--",
-        label="5% boundary test",
+        label="Nominal 5% threshold",
     )
+    if "sfa_boundary_q_value" in data and data["sfa_boundary_q_value"].notna().any():
+        fdr_supported = data["sfa_supported_fdr_5pct"].fillna(False)
+        ax.scatter(
+            -np.log10(p_values[fdr_supported]),
+            data.loc[fdr_supported, "portfolio"],
+            color="#2a9d8f",
+            marker="D",
+            label="BH FDR-supported",
+            zorder=3,
+        )
     ax.set_xlabel("-log10 boundary-test p-value")
     ax.set_title("Evidence for a One-Sided Residual Component")
     ax.legend(loc="best")
@@ -419,6 +471,7 @@ def generate_all_figures(
     rolling_performance: pd.DataFrame,
     persistence: pd.DataFrame,
     transition_matrix: pd.DataFrame,
+    transition_summary: pd.DataFrame,
     mobility: pd.DataFrame,
     robustness: pd.DataFrame,
     forward_validation: pd.DataFrame,
@@ -434,7 +487,7 @@ def generate_all_figures(
     performance_heatmap(performance_scores, output_dir)
     rolling_performance_plot(rolling_performance, output_dir)
     rank_persistence_plot(persistence, output_dir)
-    transition_heatmap(transition_matrix, output_dir)
+    transition_heatmap(transition_matrix, transition_summary, output_dir)
     mobility_plot(mobility, output_dir)
     window_sensitivity_plot(robustness, output_dir)
     forward_validation_plot(forward_validation, output_dir)

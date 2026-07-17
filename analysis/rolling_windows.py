@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from analysis.latent_performance import benjamini_hochberg
 from sfa.loaders import design_matrix
 from sfa.models import make_sfa_model, normalise_model_type
 
@@ -10,9 +11,25 @@ from sfa.models import make_sfa_model, normalise_model_type
 def _assign_window_ranks(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     valid = out["AE"].notna() & out["convergence_status"].astype(bool)
-    if "one_sided_component_supported" in out:
-        support = out["one_sided_component_supported"].fillna(False).astype(bool)
-        valid &= support
+    if "sfa_boundary_p_value" in out:
+        out["sfa_boundary_q_value"] = out.groupby("window_end")[
+            "sfa_boundary_p_value"
+        ].transform(lambda values: benjamini_hochberg(values.to_numpy(float)))
+        valid_p = out["sfa_boundary_p_value"].between(0.0, 1.0)
+        out["sfa_supported_nominal_5pct"] = pd.Series(
+            pd.NA, index=out.index, dtype="boolean"
+        )
+        out["sfa_supported_fdr_5pct"] = pd.Series(
+            pd.NA, index=out.index, dtype="boolean"
+        )
+        out.loc[valid_p, "sfa_supported_nominal_5pct"] = out.loc[
+            valid_p, "sfa_boundary_p_value"
+        ].lt(0.05)
+        out.loc[valid_p, "sfa_supported_fdr_5pct"] = out.loc[
+            valid_p, "sfa_boundary_q_value"
+        ].lt(0.05)
+        if "model_type" in out and out["model_type"].eq("half_normal").any():
+            valid &= out["sfa_supported_fdr_5pct"].fillna(False)
     out["rank"] = pd.NA
     out.loc[valid, "rank"] = (
         out.loc[valid]
@@ -111,8 +128,7 @@ def rolling_sfa(
                         "lambda": np.nan,
                         "u_hat_standardized": np.nan,
                         "boundary_lr_stat": np.nan,
-                        "boundary_mixture_p_value": np.nan,
-                        "one_sided_component_supported": False,
+                        "sfa_boundary_p_value": np.nan,
                     }
                 )
             else:
@@ -120,9 +136,7 @@ def rolling_sfa(
                     {
                         "AE": float(np.mean(fit.AE)),
                         "u_hat": float(np.mean(fit.u_hat)),
-                        "u_hat_standardized": float(
-                            np.mean(fit.u_hat_standardized)
-                        ),
+                        "u_hat_standardized": float(np.mean(fit.u_hat_standardized)),
                         "convergence_status": bool(fit.converged),
                         "message": message,
                         "log_likelihood": float(fit.log_likelihood),
@@ -134,11 +148,8 @@ def rolling_sfa(
                         "boundary_lr_stat": float(
                             getattr(fit, "boundary_lr_stat", np.nan)
                         ),
-                        "boundary_mixture_p_value": float(
+                        "sfa_boundary_p_value": float(
                             getattr(fit, "boundary_mixture_p_value", np.nan)
-                        ),
-                        "one_sided_component_supported": getattr(
-                            fit, "one_sided_component_supported", pd.NA
                         ),
                     }
                 )
