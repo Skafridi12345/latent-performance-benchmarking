@@ -125,9 +125,7 @@ def test_persistence_reports_window_overlap_and_inference_eligibility():
                 }
             )
 
-    result = compute_persistence_metrics(
-        pd.DataFrame(rows), horizons_months=[12, 120]
-    )
+    result = compute_persistence_metrics(pd.DataFrame(rows), horizons_months=[12, 120])
 
     twelve = result.query("horizon_months == 12").iloc[0]
     one_twenty = result.query("horizon_months == 120").iloc[0]
@@ -159,6 +157,10 @@ def test_forward_validation_uses_only_dates_after_training_window(synthetic_data
     assert (observations["forward_start"] > observations["window_end"]).all()
     assert (observations["forward_end"] > observations["forward_start"]).all()
     assert summary["look_ahead_free"].all()
+    assert summary["leakage_check_passed"].all()
+    assert summary["factor_loadings_frozen_at_training_end"].all()
+    assert summary["future_outcomes_excluded_from_score_estimation"].all()
+    assert summary["ranking_uses_average_within_quintiles"].all()
     assert summary["n_portfolios"].eq(5).all()
     aggregate = summarize_forward_validation(summary, hac_lags=1)
     assert bool(aggregate.loc[0, "all_look_ahead_free"])
