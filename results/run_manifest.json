@@ -1,7 +1,15 @@
 {
+  "bootstrap_stability_1000_vs_final": {
+    "absolute_change_bootstrap_bottom_quintile_probability": 0.015599999999999947,
+    "absolute_change_bootstrap_posterior_alpha_ci_high": 8.053527475929958e-05,
+    "absolute_change_bootstrap_posterior_alpha_ci_low": 0.00022113228384317875,
+    "absolute_change_bootstrap_rank_ci_high": 1.0,
+    "absolute_change_bootstrap_rank_ci_low": 1.0,
+    "absolute_change_bootstrap_top_quintile_probability": 0.02840000000000001
+  },
   "configuration": {
     "bootstrap_block_length": 12,
-    "bootstrap_replicates": 200,
+    "bootstrap_replicates": 5000,
     "bootstrap_seed": 2026,
     "factor_file": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/ff3_factors.csv",
     "factor_model": "ff3",
@@ -49,8 +57,69 @@
     "sample_end": "2025-11-30 23:59:59.999999999",
     "sample_start": "1926-07-31 23:59:59.999999999"
   },
+  "external_validation": {
+    "blocking_failures": [],
+    "official_sources": [
+      {
+        "access_date": "2026-07-16",
+        "coverage_end": "2026-05-31 23:59:59.999999999",
+        "coverage_start": "1926-07-31 23:59:59.999999999",
+        "csv_path": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/reference/official/25_Portfolios_5x5.csv",
+        "csv_sha256": "fc5b34a6c4db7de8cde14a301aa31b928ac8aae332b63ea3e4c8bc63f3fc72a9",
+        "n_rows": 29975,
+        "official_url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/25_Portfolios_5x5_CSV.zip",
+        "source": "portfolios",
+        "source_units": "percent in source; decimal after loading",
+        "weighting": "value-weighted monthly returns; first monthly block",
+        "zip_path": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/reference/official/25_Portfolios_5x5_CSV.zip",
+        "zip_sha256": "afc2f6c40237d07b99ab84ab9375a08bc301e3801e3ad8d91aa90d5aa9ec6295"
+      },
+      {
+        "access_date": "2026-07-16",
+        "coverage_end": "2026-05-31 23:59:59.999999999",
+        "coverage_start": "1926-07-31 23:59:59.999999999",
+        "csv_path": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/reference/official/F-F_Research_Data_Factors.csv",
+        "csv_sha256": "a26fcdeb09199d29bf79d40bb34ce0ffe41798d08feff1190a2c532b4742e88e",
+        "n_rows": 1199,
+        "official_url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip",
+        "source": "ff3",
+        "source_units": "percent in source; decimal after loading",
+        "weighting": "factor returns",
+        "zip_path": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/reference/official/F-F_Research_Data_Factors_CSV.zip",
+        "zip_sha256": "80b88699a18ac408e2456d25b1004e340f3f7f8d41d5b476a0285bc53c6f0436"
+      },
+      {
+        "access_date": "2026-07-16",
+        "coverage_end": "2026-05-31 23:59:59.999999999",
+        "coverage_start": "1963-07-31 23:59:59.999999999",
+        "csv_path": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/reference/official/F-F_Research_Data_5_Factors_2x3.csv",
+        "csv_sha256": "e101e7bb3ba30d0abe5919ec28fb78723b08bd668041cf0274c65ed7ca5bf249",
+        "n_rows": 755,
+        "official_url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip",
+        "source": "ff5",
+        "source_units": "percent in source; decimal after loading",
+        "weighting": "factor returns",
+        "zip_path": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/data/reference/official/F-F_Research_Data_5_Factors_2x3_CSV.zip",
+        "zip_sha256": "ddc0280b2bb8ca6c4c6ea5b68923a5549c37259bde468202108c11e812bd4241"
+      }
+    ],
+    "open_checks": [
+      "portfolio_returns_exact_overlap",
+      "ff3_factors_exact_overlap"
+    ],
+    "pipeline_integrity_approved": true,
+    "run": true,
+    "status_counts": {
+      "NOT_COMPARABLE": 2,
+      "PASS": 38
+    },
+    "unresolved_or_noncomparable_checks": [
+      "portfolio_returns_exact_overlap",
+      "ff3_factors_exact_overlap"
+    ]
+  },
   "summary": {
-    "bootstrap_replicates": 200,
+    "bootstrap_replicates": 5000,
     "factor_cols": "mkt_rf, smb, hml",
     "factor_model": "ff3",
     "figures_dir": "/Users/muhammadshoaib/Library/CloudStorage/Dropbox/0-Hobby_Projects/latent-performance-benchmarking/results/figures",
@@ -60,10 +129,12 @@
     "n_portfolios": 25,
     "n_rolling_estimates": 2250,
     "n_rolling_windows": 90,
-    "primary_model": "HAC factor alpha with empirical-Bayes shrinkage",
+    "primary_joint_alpha_p_value": 6.420759054946223e-10,
+    "primary_joint_alpha_test": "HAC_Wald",
+    "primary_model": "full joint-HAC factor alpha with multivariate empirical-Bayes shrinkage",
     "rolling_step": 12,
     "rolling_window": 120,
-    "runtime_seconds": 46.634424099999706,
+    "runtime_seconds": 383.4079271030023,
     "sample_end": "2025-11-30",
     "sample_start": "1926-07-31",
     "sfa_diagnostic": "half-normal with truncated-normal sensitivity",

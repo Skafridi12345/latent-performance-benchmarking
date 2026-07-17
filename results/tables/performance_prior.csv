@@ -1,2 +1,2 @@
-mu,mu_se,tau2,tau,marginal_objective,converged
--0.00039320306900736374,0.00024844307249564484,1.159815386259424e-06,0.0010769472532391844,-150.45884016780866,True
+mu,mu_se,tau2,tau,marginal_objective,converged,covariance_model,sampling_covariance_condition_number,sampling_covariance_eigenvalue_floor,joint_hac_hac_lags,joint_hac_n_observations,joint_hac_n_regressors,joint_hac_n_portfolios,joint_hac_minimum_eigenvalue_raw,joint_hac_minimum_eigenvalue_used,joint_hac_maximum_eigenvalue,joint_hac_condition_number,joint_hac_eigenvalue_floor,joint_hac_eigenvalues_floored,joint_hac_finite_sample_correction,joint_hac_kernel
+-0.0002130229554029507,0.00024240115324171242,6.142032647547301e-07,0.0007837112125998519,-153.7275230926392,True,full_joint_hac,139.37257337745052,2.7222367530508142e-18,12,1193,4,25,1.9532083587768913e-08,1.9532083587768913e-08,2.722236753050817e-06,139.37257337745038,2.722236753050817e-18,0,1.0033641715727502,Bartlett

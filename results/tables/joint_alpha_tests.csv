@@ -1,0 +1,3 @@
+test,statistic,p_value,reference_distribution,robust_to_serial_and_cross_portfolio_dependence,role,n_observations,n_portfolios,n_factors
+GRS,3.2770033775941574,1.1624913778843816e-07,"F(25, 1165)",False,secondary_non_iid_benchmark,1193,25,3
+HAC_Wald,93.94957478920387,6.420759054946223e-10,chi2(25),True,primary_joint_test,1193,25,3

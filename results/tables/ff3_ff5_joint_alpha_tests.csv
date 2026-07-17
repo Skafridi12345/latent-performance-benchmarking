@@ -1,0 +1,5 @@
+test,statistic,p_value,reference_distribution,robust_to_serial_and_cross_portfolio_dependence,role,n_observations,n_portfolios,n_factors,sensitivity_model
+GRS,3.5652841612464026,1.6107192252758024e-08,"F(25, 721)",False,secondary_non_iid_benchmark,749,25,3,ff3_common_sample
+HAC_Wald,85.33442971001654,1.6270429142872836e-08,chi2(25),True,primary_joint_test,749,25,3,ff3_common_sample
+GRS,3.0490015602012557,1.1105397054419754e-06,"F(25, 719)",False,secondary_non_iid_benchmark,749,25,5,ff5_common_sample
+HAC_Wald,75.049834461703,6.666295505233926e-07,chi2(25),True,primary_joint_test,749,25,5,ff5_common_sample
