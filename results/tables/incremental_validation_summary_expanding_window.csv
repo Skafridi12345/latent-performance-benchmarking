@@ -1,0 +1,3 @@
+static_scheme,metric,mean,median,hac_se,hac_t_stat,hac_lags,hac_p_value_one_sided,hac_p_value_two_sided,n_obs,bootstrap_mean,bootstrap_ci_low,bootstrap_ci_high,bootstrap_p_value_one_sided,bootstrap_block_length,bootstrap_replicates,bootstrap_random_seed,bootstrap_ci_level
+expanding_window,rank_spearman_increment,-0.04178910976663785,-0.05153846153846159,0.022375876668863096,-1.867596536442705,3,0.9690908352151915,0.06181832956961697,89,-0.041849768366465,-0.08513418323249783,0.0010475367329299636,0.9716,2,5000,2026,0.95
+expanding_window,spread_increment_bps,-44.41582222784894,-7.872019887311637,42.95468080087633,-1.0340158837111602,3,0.8494356311204561,0.3011287377590878,89,-45.168805106207024,-142.77327171236448,45.17474110550134,0.8276,2,5000,2027,0.95

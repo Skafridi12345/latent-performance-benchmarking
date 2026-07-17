@@ -11,11 +11,22 @@ from pathlib import Path
 import pandas as pd
 
 from analysis.diagnostics import model_diagnostics, residual_diagnostics
+from analysis.external_validation import (
+    asset_pricing_patterns,
+    external_validation_checks,
+    ff5_model_sensitivity,
+    historical_anchor_analysis,
+    official_reference_manifest,
+    validation_status_summary,
+)
 from analysis.figures import generate_all_figures
+from analysis.incremental_validation import ALL_SCHEMES, run_incremental_test
 from analysis.latent_performance import (
     block_bootstrap_rank_uncertainty,
     estimate_cross_sectional_performance,
     forward_performance_validation,
+    forward_validation_robustness,
+    joint_alpha_tests,
     rolling_cross_sectional_performance,
     summarize_forward_validation,
 )
@@ -33,7 +44,12 @@ TABLES_DIR = RESULTS_DIR / "tables"
 FIGURES_DIR = RESULTS_DIR / "figures"
 PORT_FILE = DATA_DIR / "25_size_bm_portfolios.csv"
 FF_FILE = DATA_DIR / "ff3_factors.csv"
+REFERENCE_DIR = DATA_DIR / "reference" / "official"
 LOGGER = logging.getLogger(__name__)
+
+# The incremental forward test needs enough non-overlapping forward windows for
+# HAC inference to be meaningful; below this it is skipped (e.g. smoke tests).
+MIN_INCREMENTAL_WINDOWS = 10
 
 
 @dataclass(frozen=True)
@@ -49,7 +65,7 @@ class PipelineConfig:
     min_obs: int = 120
     static_maxiter: int = 500
     hac_lags: int = 12
-    bootstrap_replicates: int = 200
+    bootstrap_replicates: int = 5_000
     bootstrap_block_length: int = 12
     bootstrap_seed: int = 2026
     forward_months: int = 12
@@ -87,7 +103,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments for the research pipeline."""
 
     parser = argparse.ArgumentParser(
-        description="Run the latent performance benchmarking research pipeline."
+        description="Run the uncertainty-aware portfolio benchmarking pipeline."
     )
     parser.add_argument("--portfolio-file", type=Path, default=PORT_FILE)
     parser.add_argument("--factor-file", type=Path, default=FF_FILE)
@@ -102,7 +118,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--min-obs", type=int, default=120)
     parser.add_argument("--static-maxiter", type=int, default=500)
     parser.add_argument("--hac-lags", type=int, default=12)
-    parser.add_argument("--bootstrap-replicates", type=int, default=200)
+    parser.add_argument("--bootstrap-replicates", type=int, default=5_000)
     parser.add_argument("--bootstrap-block-length", type=int, default=12)
     parser.add_argument("--bootstrap-seed", type=int, default=2026)
     parser.add_argument("--forward-months", type=int, default=12)
@@ -183,34 +199,145 @@ def run_pipeline(config: PipelineConfig) -> dict:
     _write_csv(pd.DataFrame([manifest]), config.tables_dir / "dataset_manifest.csv")
 
     LOGGER.info("Estimating HAC factor performance and hierarchical shrinkage")
-    performance, performance_residuals, prior = estimate_cross_sectional_performance(
-        df,
-        dataset.factor_cols,
-        factor_model=dataset.factor_model,
-        min_obs=config.min_obs,
-        hac_lags=config.hac_lags,
+    performance, performance_residuals, prior, joint_hac_covariance = (
+        estimate_cross_sectional_performance(
+            df,
+            dataset.factor_cols,
+            factor_model=dataset.factor_model,
+            min_obs=config.min_obs,
+            hac_lags=config.hac_lags,
+        )
     )
     LOGGER.info("Estimating common-date block-bootstrap rank uncertainty")
-    bootstrap = block_bootstrap_rank_uncertainty(
+    bootstrap, bootstrap_stability = block_bootstrap_rank_uncertainty(
         df,
         dataset.factor_cols,
         n_bootstrap=config.bootstrap_replicates,
         block_length=config.bootstrap_block_length,
         hac_lags=config.hac_lags,
         random_seed=config.bootstrap_seed,
+        stability_checkpoint=min(1_000, config.bootstrap_replicates),
+        return_stability=True,
     )
     performance = performance.merge(bootstrap, on="portfolio", how="left")
     _write_csv(performance, config.tables_dir / "performance_scores.csv")
     _write_csv(performance_residuals, config.tables_dir / "performance_residuals.csv")
+    posterior_covariance = prior.pop("posterior_covariance")
+    shrinkage_matrix = prior.pop("shrinkage_matrix")
+    matrix_order = prior.pop("matrix_portfolio_order")
     _write_csv(pd.DataFrame([prior]), config.tables_dir / "performance_prior.csv")
     _write_csv(bootstrap, config.tables_dir / "performance_rank_uncertainty.csv")
+    _write_csv(
+        bootstrap_stability,
+        config.tables_dir / "bootstrap_stability_1000_vs_final.csv",
+    )
+    _write_csv(
+        joint_hac_covariance,
+        config.tables_dir / "joint_alpha_hac_covariance.csv",
+        index=True,
+    )
+    _write_csv(
+        pd.DataFrame(posterior_covariance, index=matrix_order, columns=matrix_order),
+        config.tables_dir / "posterior_alpha_covariance.csv",
+        index=True,
+    )
+    _write_csv(
+        pd.DataFrame(shrinkage_matrix, index=matrix_order, columns=matrix_order),
+        config.tables_dir / "empirical_bayes_shrinkage_matrix.csv",
+        index=True,
+    )
+    joint_order = joint_hac_covariance.columns.tolist()
+    joint_alpha = (
+        performance.set_index("portfolio").loc[joint_order, "alpha"].to_numpy(float)
+    )
+    residual_matrix = (
+        performance_residuals.pivot(
+            index="date", columns="portfolio", values="residual"
+        )
+        .reindex(columns=joint_order)
+        .to_numpy(float)
+    )
+    first_portfolio = df[df["portfolio"] == joint_order[0]].sort_values("date")
+    joint_tests = joint_alpha_tests(
+        joint_alpha,
+        residual_matrix,
+        first_portfolio[dataset.factor_cols].to_numpy(float),
+        joint_hac_covariance.to_numpy(float),
+    )
+    _write_csv(joint_tests, config.tables_dir / "joint_alpha_tests.csv")
+
+    canonical_inputs = (
+        config.port_file.resolve() == PORT_FILE.resolve()
+        and config.factor_file.resolve() == FF_FILE.resolve()
+    )
+    external_validation_manifest: dict = {
+        "run": False,
+        "reason": "non-canonical input paths",
+    }
+    if canonical_inputs:
+        LOGGER.info("Running official-source and independent replication checks")
+        reference_manifest = official_reference_manifest(REFERENCE_DIR)
+        external_checks = external_validation_checks(
+            dataset,
+            performance,
+            local_portfolio_file=config.port_file,
+            local_factor_file=config.factor_file,
+            reference_dir=REFERENCE_DIR,
+            hac_lags=config.hac_lags,
+        )
+        validation_summary = validation_status_summary(external_checks)
+        patterns = asset_pricing_patterns(dataset, performance)
+        historical_scores, historical_tests = historical_anchor_analysis(
+            dataset, hac_lags=config.hac_lags
+        )
+        ff_scores, ff_comparison, ff_joint_tests = ff5_model_sensitivity(
+            dataset,
+            local_portfolio_file=config.port_file,
+            official_ff5_file=(REFERENCE_DIR / "F-F_Research_Data_5_Factors_2x3.csv"),
+            hac_lags=config.hac_lags,
+        )
+        _write_csv(
+            reference_manifest,
+            config.tables_dir / "official_reference_manifest.csv",
+        )
+        _write_csv(
+            external_checks,
+            config.tables_dir / "external_validation_checks.csv",
+        )
+        _write_csv(patterns, config.tables_dir / "asset_pricing_pattern_checks.csv")
+        _write_csv(
+            historical_scores,
+            config.tables_dir / "historical_anchor_1963_07_to_1991_12.csv",
+        )
+        _write_csv(
+            historical_tests,
+            config.tables_dir / "historical_anchor_joint_alpha_tests.csv",
+        )
+        _write_csv(
+            ff_scores,
+            config.tables_dir / "ff3_ff5_common_sample_scores.csv",
+        )
+        _write_csv(
+            ff_comparison,
+            config.tables_dir / "ff3_ff5_sensitivity_comparison.csv",
+        )
+        _write_csv(
+            ff_joint_tests,
+            config.tables_dir / "ff3_ff5_joint_alpha_tests.csv",
+        )
+        external_validation_manifest = {
+            "run": True,
+            "official_sources": reference_manifest.to_dict(orient="records"),
+            **validation_summary,
+            "unresolved_or_noncomparable_checks": validation_summary["open_checks"],
+        }
 
     ranking_comparison = performance[
         ["portfolio", "alpha", "posterior_alpha", "performance_rank"]
     ].copy()
-    ranking_comparison["raw_alpha_rank"] = ranking_comparison["alpha"].rank(
-        ascending=False, method="first"
-    ).astype(int)
+    ranking_comparison["raw_alpha_rank"] = (
+        ranking_comparison["alpha"].rank(ascending=False, method="first").astype(int)
+    )
     ranking_comparison["rank_change_after_shrinkage"] = (
         ranking_comparison["raw_alpha_rank"] - ranking_comparison["performance_rank"]
     )
@@ -279,6 +406,47 @@ def run_pipeline(config: PipelineConfig) -> dict:
         forward_aggregate,
         config.tables_dir / "forward_performance_aggregate.csv",
     )
+    forward_robustness, forward_extremes = forward_validation_robustness(
+        forward_summary
+    )
+    _write_csv(
+        forward_robustness,
+        config.tables_dir / "forward_performance_robustness.csv",
+    )
+    _write_csv(
+        forward_extremes,
+        config.tables_dir / "forward_performance_extreme_windows.csv",
+    )
+
+    n_forward_windows = int(forward_observations["window_end"].nunique())
+    if n_forward_windows >= MIN_INCREMENTAL_WINDOWS:
+        LOGGER.info(
+            "Running incremental rolling-vs-benchmark forward test (%d benchmarks)",
+            len(ALL_SCHEMES),
+        )
+        for scheme in ALL_SCHEMES:
+            run_incremental_test(
+                config.port_file,
+                config.factor_file,
+                factor_model=dataset.factor_model,
+                scheme=scheme,
+                rolling_window=config.rolling_window,
+                rolling_step=config.rolling_step,
+                min_obs=config.min_obs,
+                hac_lags=config.hac_lags,
+                forward_months=config.forward_months,
+                bootstrap_replicates=config.bootstrap_replicates,
+                bootstrap_seed=config.bootstrap_seed,
+                output_dir=config.results_dir,
+                verbose=False,
+            )
+    else:
+        LOGGER.warning(
+            "Skipping incremental forward test: only %d forward windows "
+            "(need >= %d for meaningful HAC inference).",
+            n_forward_windows,
+            MIN_INCREMENTAL_WINDOWS,
+        )
 
     LOGGER.info("Running date-stratified rolling-window sensitivity checks")
     robustness_summary, robustness_scores = performance_window_sensitivity(
@@ -305,9 +473,7 @@ def run_pipeline(config: PipelineConfig) -> dict:
         maxiter=config.static_maxiter,
     )
     _write_csv(static_scores, config.tables_dir / "sfa_asymmetry_diagnostics.csv")
-    _write_csv(
-        static_timeseries, config.tables_dir / "sfa_observation_diagnostics.csv"
-    )
+    _write_csv(static_timeseries, config.tables_dir / "sfa_observation_diagnostics.csv")
 
     LOGGER.info("Estimating truncated-normal sensitivity diagnostic")
     truncated_scores, _ = estimate_static_sfa(
@@ -326,9 +492,7 @@ def run_pipeline(config: PipelineConfig) -> dict:
         static_timeseries,
     )
     performance_diagnostics = residual_diagnostics(performance_residuals)
-    _write_csv(
-        sfa_diagnostics, config.tables_dir / "sfa_model_diagnostics.csv"
-    )
+    _write_csv(sfa_diagnostics, config.tables_dir / "sfa_model_diagnostics.csv")
     _write_csv(
         performance_diagnostics,
         config.tables_dir / "performance_residual_diagnostics.csv",
@@ -340,6 +504,7 @@ def run_pipeline(config: PipelineConfig) -> dict:
         rolling_performance=rolling,
         persistence=persistence,
         transition_matrix=transition_matrix,
+        transition_summary=transition_summary,
         mobility=mobility,
         robustness=robustness_summary,
         forward_validation=forward_summary,
@@ -358,7 +523,9 @@ def run_pipeline(config: PipelineConfig) -> dict:
         "factor_model": dataset.factor_model,
         "factor_cols": ", ".join(dataset.factor_cols),
         "sfa_diagnostic": "half-normal with truncated-normal sensitivity",
-        "primary_model": "HAC factor alpha with empirical-Bayes shrinkage",
+        "primary_model": (
+            "full joint-HAC factor alpha with multivariate empirical-Bayes shrinkage"
+        ),
         "hac_lags": config.hac_lags,
         "bootstrap_replicates": config.bootstrap_replicates,
         "forward_months": config.forward_months,
@@ -367,6 +534,10 @@ def run_pipeline(config: PipelineConfig) -> dict:
         "rolling_step": config.rolling_step,
         "n_rolling_windows": n_windows,
         "n_rolling_estimates": n_estimates,
+        "primary_joint_alpha_test": "HAC_Wald",
+        "primary_joint_alpha_p_value": float(
+            joint_tests.set_index("test").loc["HAC_Wald", "p_value"]
+        ),
         "tables_dir": str(config.tables_dir),
         "figures_dir": str(config.figures_dir),
         "runtime_seconds": elapsed,
@@ -375,6 +546,12 @@ def run_pipeline(config: PipelineConfig) -> dict:
         {
             "dataset": manifest,
             "configuration": asdict(config),
+            "bootstrap_stability_1000_vs_final": {
+                column: float(bootstrap_stability[column].max())
+                for column in bootstrap_stability.columns
+                if column.startswith("absolute_change_")
+            },
+            "external_validation": external_validation_manifest,
             "summary": summary,
         },
         config.results_dir / "run_manifest.json",
@@ -395,7 +572,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     summary = run_pipeline(config_from_args(args))
 
-    print("\nLatent Performance Benchmarking pipeline complete")
+    print("\nUncertainty-Aware Portfolio Benchmarking pipeline complete")
     print("------------------------------------------------")
     print(f"Portfolios: {summary['n_portfolios']}")
     print(f"Sample period: {summary['sample_start']} to {summary['sample_end']}")

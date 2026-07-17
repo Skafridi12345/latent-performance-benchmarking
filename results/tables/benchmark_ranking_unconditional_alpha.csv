@@ -1,0 +1,26 @@
+portfolio,static_rank,static_scheme,static_score
+SMALL HiBM,1,unconditional_alpha,0.0010959931809999956
+BIG LoBM,2,unconditional_alpha,0.0006550080814669537
+ME4 BM1,3,unconditional_alpha,0.0006522440713269812
+ME1 BM4,4,unconditional_alpha,0.0005093528563568338
+ME3 BM2,5,unconditional_alpha,0.0004550441437703618
+ME2 BM5,6,unconditional_alpha,0.0003847499642399684
+ME4 BM4,7,unconditional_alpha,0.00017363081155573839
+ME2 BM2,8,unconditional_alpha,0.0001348346966700101
+ME3 BM4,9,unconditional_alpha,0.00011453525854389319
+ME5 BM3,10,unconditional_alpha,0.00010561799713589541
+ME2 BM3,11,unconditional_alpha,-5.461859477266101e-05
+ME2 BM4,12,unconditional_alpha,-0.0001411904465846162
+ME5 BM2,13,unconditional_alpha,-0.00023836486771433376
+ME4 BM3,14,unconditional_alpha,-0.00023924930793765977
+ME3 BM3,15,unconditional_alpha,-0.0002905584715823631
+ME3 BM5,16,unconditional_alpha,-0.0003609050064012945
+ME4 BM2,17,unconditional_alpha,-0.0006405296381400609
+BIG HiBM,18,unconditional_alpha,-0.0006798029576637161
+ME3 BM1,19,unconditional_alpha,-0.0006802997279273364
+ME1 BM3,20,unconditional_alpha,-0.0006944191775719022
+ME4 BM5,21,unconditional_alpha,-0.0007634247916883856
+ME1 BM2,22,unconditional_alpha,-0.0009586482530357337
+ME2 BM1,23,unconditional_alpha,-0.0009590707795635726
+ME5 BM4,24,unconditional_alpha,-0.0013673836572450893
+SMALL LoBM,25,unconditional_alpha,-0.0015381192693116727
