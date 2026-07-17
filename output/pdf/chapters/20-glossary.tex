@@ -1,0 +1,260 @@
+\hypertarget{glossary}{}
+\hypertarget{terminology-glossary}{%
+\chapter{Terminology glossary}\label{terminology-glossary}}
+
+\hypertarget{glossary-grid}{}
+\textbf{Alpha}\\
+Regression intercept: average return unexplained by the included linear
+factors.
+
+\textbf{Beta}\\
+Factor loading measuring conditional sensitivity to a factor.
+
+\textbf{Excess return}\\
+Portfolio return minus the risk-free return.
+
+\textbf{FF3}\\
+Fama-French market, size and value factor model.
+
+\textbf{FF5}\\
+FF3 augmented with profitability and investment factors.
+
+\textbf{Mkt-RF}\\
+Market portfolio return minus the risk-free rate.
+
+\textbf{SMB}\\
+Small-minus-big factor associated with firm size.
+
+\textbf{HML}\\
+High-minus-low book-to-market value factor.
+
+\textbf{RMW}\\
+Robust-minus-weak profitability factor.
+
+\textbf{CMA}\\
+Conservative-minus-aggressive investment factor.
+
+\textbf{Basis point}\\
+One hundredth of one percentage point; 100 bps = 1\%.
+
+\textbf{Balanced panel}\\
+Every portfolio has an observation at every included date.
+
+\textbf{Analytical grain}\\
+The entity-time key represented by one row; here, one portfolio-month.
+
+\textbf{Provenance}\\
+Documented origin, date, version, transformation and identity of data.
+
+\textbf{SHA-256}\\
+Cryptographic digest used to identify exact file bytes.
+
+\textbf{OLS}\\
+Ordinary least squares regression.
+
+\textbf{Self-financing portfolio}\\
+A long-short portfolio whose long position is financed by its short
+position, so net initial investment is zero in the idealised
+construction.
+
+\textbf{Residual}\\
+Observed outcome minus fitted model outcome.
+
+\textbf{Influence weight}\\
+Coefficient showing how one observation\textquotesingle s disturbance
+contributes linearly to an estimator such as alpha.
+
+\textbf{Heteroskedasticity}\\
+Non-constant conditional residual variance.
+
+\textbf{Autocorrelation}\\
+Dependence between observations at different times.
+
+\textbf{Cross-sectional dependence}\\
+Same-date dependence among different portfolios.
+
+\textbf{HAC}\\
+Heteroskedasticity- and autocorrelation-consistent covariance
+estimation.
+
+\textbf{Newey-West}\\
+A kernel-weighted HAC covariance estimator.
+
+\textbf{Long-run covariance}\\
+Sum of contemporaneous and lagged covariance matrices governing the
+asymptotic variance of a dependent sample mean.
+
+\textbf{Bartlett kernel}\\
+Linearly declining weights applied to lagged covariance terms.
+
+\textbf{Lag}\\
+Time separation between observations in dependence calculations.
+
+\textbf{Positive semi-definite}\\
+A covariance property ensuring non-negative variance in every direction.
+
+\textbf{Condition number}\\
+Numerical sensitivity of a matrix solve to perturbations.
+
+\textbf{Wald test}\\
+Quadratic-form test of parameter restrictions using an estimated
+covariance.
+
+\textbf{GRS test}\\
+Classical joint test that all factor-model alphas are zero under IID
+Gaussian assumptions.
+
+\textbf{Null hypothesis}\\
+The restriction evaluated by a statistical test.
+
+\textbf{p-value}\\
+Tail probability of evidence at least as extreme under the null model.
+
+\textbf{False discovery rate}\\
+Expected proportion of false rejections among all rejections.
+
+\textbf{BH procedure}\\
+Benjamini-Hochberg step-up multiple-testing correction.
+
+\textbf{q-value}\\
+Multiplicity-adjusted evidence associated with FDR control.
+
+\textbf{Empirical Bayes}\\
+Bayesian-form shrinkage with prior hyperparameters estimated from the
+observed ensemble.
+
+\textbf{Prior}\\
+Distribution describing the cross-sectional alpha population before each
+noisy estimate is combined with it.
+
+\textbf{Posterior}\\
+Updated distribution after combining prior structure with data.
+
+\textbf{Hyperparameter}\\
+Parameter of the prior distribution, such as \ensuremath{\mu } or \ensuremath{\tau }.
+
+\textbf{Marginal likelihood}\\
+Likelihood after integrating out latent parameters; used here to
+estimate \ensuremath{\mu } and \ensuremath{\tau }.
+
+\textbf{Profile likelihood}\\
+Likelihood in one parameter after replacing nuisance parameters by their
+conditional maximisers.
+
+\textbf{Partial pooling}\\
+Shrinking unit estimates toward a shared centre without forcing them to
+be equal.
+
+\textbf{Winner\textquotesingle s curse}\\
+Upward noise bias in an estimate selected because it is the largest.
+
+\textbf{Block bootstrap}\\
+Resampling contiguous observations to preserve local time dependence.
+
+\textbf{Circular block}\\
+A block allowed to wrap from the sample end to the beginning.
+
+\textbf{Common-date resampling}\\
+Applying identical resampled dates to every portfolio.
+
+\textbf{Rank interval}\\
+Empirical uncertainty range for an item\textquotesingle s rank.
+
+\textbf{Rolling window}\\
+Fixed-length historical sample that moves through time.
+
+\textbf{Expanding window}\\
+Historical sample that retains all available data up to each cutoff.
+
+\textbf{Look-ahead}\\
+Use of information unavailable at the decision time.
+
+\textbf{Leakage}\\
+Any path by which evaluation information influences training,
+preprocessing or selection.
+
+\textbf{Frozen beta}\\
+A factor loading fixed at the training cutoff during future evaluation.
+
+\textbf{Spearman correlation}\\
+Correlation of ranks; a measure of monotone ordering agreement.
+
+\textbf{Fisher transformation}\\
+atanh transformation used when aggregating correlations.
+
+\textbf{Quintile spread}\\
+Mean outcome of the top fifth minus mean outcome of the bottom fifth.
+
+\textbf{Oracle}\\
+Look-ahead benchmark used as an upper bound, not an implementable
+strategy.
+
+\textbf{Jaccard index}\\
+Set overlap measured as intersection divided by union.
+
+\textbf{Persistence}\\
+Stability of scores or ranks across time.
+
+\textbf{Mobility}\\
+Movement between rank or quintile states over time.
+
+\textbf{Jarque-Bera}\\
+Residual normality diagnostic based on skewness and kurtosis.
+
+\textbf{Ljung-Box}\\
+Portmanteau test for serial autocorrelation.
+
+\textbf{ARCH-LM}\\
+Test for autoregressive conditional heteroskedasticity.
+
+\textbf{SFA}\\
+Stochastic frontier analysis separating symmetric noise and one-sided
+shortfall.
+
+\textbf{Composite error}\\
+Disturbance formed from multiple latent components; in production SFA,
+\ensuremath{\varepsilon }=v\ensuremath{-}u.
+
+\textbf{Half-normal}\\
+Distribution of the absolute value of a zero-mean normal variable.
+
+\textbf{Truncated normal}\\
+A normal distribution conditioned to lie inside a specified interval.
+
+\textbf{Inverse Mills ratio}\\
+Ratio \ensuremath{\phi }(z)/\ensuremath{\Phi }(z), appearing in moments of a one-sided truncated normal.
+
+\textbf{Likelihood}\\
+Observed-data density viewed as a function of unknown parameters.
+
+\textbf{Maximum likelihood}\\
+Parameter estimation by maximising the sample likelihood or
+log-likelihood.
+
+\textbf{Score}\\
+Gradient of the log-likelihood with respect to its parameters; distinct
+here from a portfolio performance score.
+
+\textbf{Mixture distribution}\\
+Probability distribution formed by weighting component distributions;
+the SFA boundary reference mixes \ensuremath{\chi }\textsuperscript{2}\textsubscript{0} and
+\ensuremath{\chi }\textsuperscript{2}\textsubscript{1}.
+
+\textbf{Identification}\\
+Property that distinct parameter values imply distinct observable
+probability distributions.
+
+\textbf{Boundary test}\\
+Test where the null parameter lies on the edge of its permitted space.
+
+\textbf{Model risk}\\
+Conclusion sensitivity to benchmark, assumptions, specification or
+tuning.
+
+\textbf{Manifest}\\
+Machine-readable record of inputs, settings, environment and outputs.
+
+\textbf{NOT COMPARABLE}\\
+Status indicating that exact equality is not a valid check for the
+available versions.
+

@@ -1,0 +1,102 @@
+\hypertarget{bootstrap}{}
+\hypertarget{common-date-circular-block-bootstrap-for-rank-uncertainty}{%
+\chapter{Common-date circular block bootstrap for rank
+uncertainty}\label{common-date-circular-block-bootstrap-for-rank-uncertainty}}
+
+\hypertarget{why-a-rank-needs-its-own-uncertainty-analysis}{%
+\section{Why a rank needs its own uncertainty
+analysis}\label{why-a-rank-needs-its-own-uncertainty-analysis}}
+
+A rank is a discontinuous function of all 25 scores. A standard error
+for portfolio i alone cannot tell us whether it remains above portfolio
+j when shared historical shocks are resampled.
+
+\hypertarget{why-blocks-and-why-common-dates}{%
+\section{Why blocks and why common
+dates?}\label{why-blocks-and-why-common-dates}}
+
+\begin{itemize}
+\tightlist
+\item
+  Monthly observations are dependent; resampling individual months
+  destroys serial structure.
+\item
+  A 12-month block preserves local dependence across a year.
+\item
+  Circular wrapping gives every month equal opportunity to begin a
+  complete block.
+\item
+  The same resampled date indices must be used for every portfolio to
+  preserve cross-sectional shocks.
+\end{itemize}
+
+\hypertarget{full-refit-algorithm}{%
+\section{Full-refit algorithm}\label{full-refit-algorithm}}
+
+\begin{verbatim}
+for b in range(B):
+    idx = circular_block_indices(T, block_length=12, rng=rng)
+    y_b = y[idx, :]             # same dates for all portfolios
+    f_b = factors[idx, :]
+
+    alpha_b, beta_b, resid_b = fit_all_ols(y_b, f_b)
+    V_b = joint_newey_west_alpha_covariance(resid_b, f_b, lags=12)
+    mu_b, tau_b = fit_empirical_bayes(alpha_b, V_b)
+    post_b = posterior_mean(alpha_b, V_b, mu_b, tau_b)
+    rank_b = descending_rank(post_b)
+    store(post_b, rank_b)
+\end{verbatim}
+
+Do not hold the original betas, covariance or hyperparameters fixed
+inside the bootstrap. That would understate estimator uncertainty.
+
+\hypertarget{a-circular-index-example}{%
+\section{A circular-index example}\label{a-circular-index-example}}
+
+Take T = 10 observations labelled 0,\ldots,9 and block length L = 4. If
+random starting indices are 8, 3 and 6, the circular blocks are:
+
+\[
+(8,9,0,1), (3,4,5,6), (6,7,8,9).
+\]
+
+Concatenate and truncate to length T, giving (8,9,0,1,3,4,5,6,6,7). For
+the portfolio panel, exactly this index vector selects rows of every
+portfolio and every factor. The duplicated 6 is valid bootstrap
+sampling; cross-sectional alignment at each selected date is preserved.
+
+Block length trades bias against variance. Very short blocks resemble
+IID resampling and break dependence; very long blocks leave few
+effectively distinct resamples. Twelve months is substantively
+interpretable here, but a defensible workflow also checks nearby
+lengths. With B draws, the Monte Carlo standard error of an estimated
+probability \ensuremath{\hat{p}} is approximately
+
+\[
+MCSE(\hat{p}) \approx  \sqrt{\hat{p}(1-\hat{p})/B}.
+\]
+
+At \ensuremath{\hat{p}} = 0.5 and B = 5,000 this is about 0.0071, or 0.71 percentage
+points. Quantile endpoints generally need more draws than posterior
+means, which is why the 1,000-versus-5,000 stability comparison matters.
+
+\hypertarget{outputs}{%
+\section{Outputs}\label{outputs}}
+
+\begin{itemize}
+\tightlist
+\item
+  Median rank and central 95\% rank interval.
+\item
+  Probability of being in the top or bottom quintile.
+\item
+  Bootstrap score intervals.
+\item
+  Stability comparison across 1,000 and 5,000 draws.
+\end{itemize}
+
+\textbf{Paper result.} With 5,000 draws, rank-interval endpoints moved
+by at most one rank relative to 1,000 draws, but alpha-tail endpoints
+moved by as much as 27 bps/year. SMALL HiBM is point rank 1 and reaches
+rank 6 in its central rank interval.
+

@@ -1,0 +1,149 @@
+\hypertarget{hac}{}
+\hypertarget{full-cross-portfolio-newey-west-covariance}{%
+\chapter{Full cross-portfolio Newey-West
+covariance}\label{full-cross-portfolio-newey-west-covariance}}
+
+Understand heteroskedasticity, serial correlation and cross-portfolio
+dependence, then construct a joint 25 \ensuremath{\times } 25 alpha covariance matrix.
+
+\hypertarget{why-ordinary-ols-covariance-is-inadequate}{%
+\section{Why ordinary OLS covariance is
+inadequate}\label{why-ordinary-ols-covariance-is-inadequate}}
+
+\hypertarget{heteroskedasticity}{%
+\subsection{Heteroskedasticity}\label{heteroskedasticity}}
+
+The conditional variance of residuals changes over time.
+
+\hypertarget{autocorrelation}{%
+\subsection{Autocorrelation}\label{autocorrelation}}
+
+Residual shocks remain related across nearby months.
+
+\hypertarget{cross-sectional-dependence}{%
+\subsection{Cross-sectional
+dependence}\label{cross-sectional-dependence}}
+
+Different portfolios are hit by the same monthly shocks.
+
+Twenty-five separate HAC standard errors preserve the first two effects
+within each portfolio, but discard the third. Joint testing and
+multivariate shrinkage require the off-diagonal alpha covariances as
+well.
+
+\hypertarget{influence-score-construction}{%
+\section{Influence-score
+construction}\label{influence-score-construction}}
+
+Because every portfolio uses the same factor matrix, the OLS intercept
+estimation error can be written as a weighted sum of residuals. Let
+\emph{a\textsubscript{t}} be the intercept weight for date t,
+\emph{e\textsubscript{t}} the 25-vector of same-month residuals, and
+\emph{g\textsubscript{t} = a\textsubscript{t}e\textsubscript{t}} the
+25-vector alpha score.
+
+\[
+\Gamma _{\ell} = \sum _{t=\ell +1}^{T} g_{t}g{}^{\prime}_{t-\ell}, w_{\ell} = 1 - \ell /(L+1)
+\]
+
+\[
+\hat{V}_{\mathrm{HAC}} = c { \Gamma _{0} + \sum _{\ell =1}^{L} w_{\ell}(\Gamma _{\ell} + \Gamma {}^{\prime}_{\ell}) }
+\]
+
+Here L = 12 and c is the documented finite-sample correction. Bartlett
+weights decline linearly and make the Newey-West construction positive
+semi-definite in theory.
+
+\hypertarget{deriving-the-joint-covariance-from-first-principles}{%
+\section{Deriving the joint covariance from first
+principles}\label{deriving-the-joint-covariance-from-first-principles}}
+
+Stack the N portfolio residuals at date t into
+e\textsubscript{t}=(\ensuremath{\varepsilon }\textsubscript{1t},\ldots,\ensuremath{\varepsilon }\textsubscript{Nt})\ensuremath{{}^{\prime}}.
+Because all portfolios use the same X, the intercept weight
+a\textsubscript{t} is common. The N-vector of alpha-estimation errors is
+
+\[
+\hat{\alpha }-\alpha  = \sum _{t=1}^{T}a_{t}e_{t} = \sum _{t=1}^{T}g_{t}.
+\]
+
+Without assuming independence through time, its covariance is
+
+\[
+Var(\hat{\alpha }-\alpha )=\sum _{t=1}^{T}\sum _{s=1}^{T}Cov(g_{t},g_{s}).
+\]
+
+Under weak stationarity, covariance depends primarily on lag \ensuremath{\ell }=t\ensuremath{-}s.
+Grouping the double sum by lag produces the long-run covariance. Because
+high-lag sample covariances are noisy, Newey-West truncates at L and
+downweights larger lags using w\textsubscript{\ensuremath{\ell }}.
+
+\begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
+\toprule\noalign{}
+Object & Dimension & Role \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+X & T \ensuremath{\times } (K+1) & Common regression design \\
+a & T \ensuremath{\times } 1 & Intercept influence weights \\
+e\textsubscript{t} & N \ensuremath{\times } 1 & Same-month residual vector \\
+g\textsubscript{t}=a\textsubscript{t}e\textsubscript{t} & N \ensuremath{\times } 1 &
+Same-month alpha score \\
+\ensuremath{\Gamma }\textsubscript{\ensuremath{\ell }} & N \ensuremath{\times } N & Lag-\ensuremath{\ell } score cross-product \\
+\ensuremath{\hat{V}}\textsubscript{HAC} & N \ensuremath{\times } N & Joint alpha-estimation covariance \\
+\end{longtable}
+
+\hypertarget{toy-covariance-calculation}{%
+\section{Toy covariance calculation}\label{toy-covariance-calculation}}
+
+In the five-month example a\textsubscript{t}=0.2. Ignoring lag terms
+only for illustration, the residual cross-product matrix is
+
+\[
+E{}^{\prime}E = [[0.140,0.130,-0.022],[0.130,0.123,-0.017],[-0.022,-0.017,0.0086]].
+\]
+
+Thus \ensuremath{\Gamma }\textsubscript{0}=0.2\textsuperscript{2}E\ensuremath{{}^{\prime}}E. With two regression parameters, the
+paper-style small-sample factor is T/(T\ensuremath{-}P)=5/3. The illustrative
+covariance becomes (5/3)\ensuremath{\times }0.04\ensuremath{\times }E\ensuremath{{}^{\prime}}E. The positive A-B covariance means
+their alpha estimation errors tend to move together; treating them as
+independent would discard this information.
+
+\hypertarget{numerical-audit}{%
+\section{Numerical audit}\label{numerical-audit}}
+
+\begin{verbatim}
+V = 0.5 * (V + V.T)                   # remove floating asymmetry
+eig = np.linalg.eigvalsh(V)
+scale = max(np.linalg.norm(V, 2), 1.0)
+tol = 1e-12 * scale
+if eig.min() < -tol:
+    raise ArithmeticError("Materially indefinite HAC covariance")
+condition_number = np.linalg.cond(V)
+# Record any tiny numerical flooring; never hide large regularisation.
+\end{verbatim}
+
+\textbf{Paper result.} The canonical 25 \ensuremath{\times } 25 matrix is positive definite
+without flooring and has condition number 139.4. This supports stable
+linear solves, but does not make the regression model itself correct.
+
+\hypertarget{what-hac-does-and-does-not-do}{%
+\section{What HAC does and does not
+do}\label{what-hac-does-and-does-not-do}}
+
+\begin{longtable}[]{@{}p{0.29\textwidth}p{0.63\textwidth}@{}}
+\toprule\noalign{}
+HAC helps with & HAC does not repair \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Heteroskedasticity and finite-lag serial dependence in covariance
+estimation & Omitted factors, nonlinear payoffs or time-varying betas \\
+Cross-portfolio covariance when scores are stacked by common date & Bad
+joins, wrong units or an incorrect data vintage \\
+Asymptotically robust Wald inference & Gaussian likelihood assumptions
+used elsewhere \\
+\end{longtable}
+

@@ -1,0 +1,114 @@
+\hypertarget{diagnostics}{}
+\hypertarget{residual-diagnostics-benchmark-sensitivity-and-model-risk}{%
+\chapter{Residual diagnostics, benchmark sensitivity and model
+risk}\label{residual-diagnostics-benchmark-sensitivity-and-model-risk}}
+
+\hypertarget{diagnostic-tests}{%
+\section{Diagnostic tests}\label{diagnostic-tests}}
+
+\begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
+\toprule\noalign{}
+Test & Null hypothesis & If rejected \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Jarque-Bera & Residual skewness and kurtosis match a normal distribution
+& Gaussian likelihood is questionable \\
+Ljung-Box (lag 12) & No residual autocorrelation through lag 12 & Serial
+dependence remains \\
+ARCH-LM (lag 12) & No conditional heteroskedasticity & Residual variance
+is time-varying \\
+\end{longtable}
+
+For residuals e\textsubscript{1},\ldots,e\textsubscript{T}, let S denote
+sample skewness and K sample kurtosis. The Jarque-Bera statistic is
+
+\[
+JB = T/6 \cdot  [S^{2} + (K-3)^{2}/4] \approx  \chi ^{2}_{2} \quad \text{under an IID normal null}.
+\]
+
+Let \ensuremath{\hat{\rho }}\textsubscript{\ensuremath{\ell }} be the residual autocorrelation at lag \ensuremath{\ell }. The
+Ljung-Box portmanteau statistic through lag m is
+
+\[
+Q(m)=T(T+2) \sum _{\ell =1}^{m} \hat{\rho }_{\ell}^{2}/(T-\ell ) \approx  \chi ^{2}_{m}.
+\]
+
+For ARCH-LM, run the auxiliary regression
+
+\[
+\hat{e}_{t}^{2} = c + \gamma _{1}\hat{e}_{t-1}^{2} + \cdots  + \gamma _{m}\hat{e}_{t-m}^{2} + \eta _{t}.
+\]
+
+Under H\textsubscript{0}:\ensuremath{\gamma }\textsubscript{1}=\ensuremath{\cdot }\ensuremath{\cdot }\ensuremath{\cdot }=\ensuremath{\gamma }\textsubscript{m}=0,
+the statistic (T\ensuremath{-}m)R\textsuperscript{2} is asymptotically \ensuremath{\chi }\textsuperscript{2}\textsubscript{m}. Rejection
+indicates predictable conditional variance, not necessarily incorrect
+conditional mean.
+
+\begin{verbatim}
+from statsmodels.stats.diagnostic import acorr_ljungbox, het_arch
+from statsmodels.stats.stattools import jarque_bera
+
+jb_stat, jb_p, skew, kurt = jarque_bera(resid)
+lb_p = acorr_ljungbox(resid, lags=[12], return_df=True)["lb_pvalue"].iloc[0]
+arch_stat, arch_p, _, _ = het_arch(resid, nlags=12)
+\end{verbatim}
+
+In the paper, normality and no-ARCH are rejected for all 25 portfolios,
+while lag-12 independence is rejected for 16. This explains why
+IID-normal GRS is secondary, but it does not mean every conclusion is
+invalid: HAC and block resampling target specific inferential problems.
+
+\begin{longtable}[]{@{}p{0.29\textwidth}p{0.63\textwidth}@{}}
+\toprule\noalign{}
+Question & What diagnostics imply \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Are OLS coefficients algebraically defined? & Yes, provided X has full
+column rank. \\
+Are OLS coefficients consistent for the linear projection? &
+Potentially, under orthogonality and suitable weak-dependence
+conditions; normality is not required. \\
+Are conventional IID standard errors valid? & No when heteroskedasticity
+or serial dependence is material. \\
+Does HAC prove the factor model is correctly specified? & No. It repairs
+an asymptotic covariance estimate, not omitted variables, nonlinearities
+or unstable betas. \\
+Is a Gaussian SFA likelihood trustworthy after these rejections? & Only
+as a deliberately narrow diagnostic, reinforced by simulation and
+boundary/FDR safeguards. \\
+\end{longtable}
+
+\hypertarget{ff3-versus-ff5}{%
+\section{FF3 versus FF5}\label{ff3-versus-ff5}}
+
+FF5 adds profitability (RMW) and investment (CMA). Compare models only
+on their common sample. Otherwise, ``model difference'' is confounded
+with ``sample difference.''
+
+\begin{itemize}
+\tightlist
+\item
+  Fit both models on July 1963-November 2025.
+\item
+  Compare posterior ranks, score correlations, FDR discoveries and joint
+  tests.
+\item
+  Report the largest absolute rank move and the affected portfolio.
+\end{itemize}
+
+\textbf{Paper result.} FF3 and FF5 ranks correlate 0.875, yet ME5 BM2
+moves from rank 9 to rank 20. Benchmark choice is economically
+meaningful even when overall rank correlation looks high.
+
+\hypertarget{window-length-sensitivity}{%
+\section{Window-length sensitivity}\label{window-length-sensitivity}}
+
+Compare 60-, 120- and 180-month estimates on aligned dates. Rank
+correlation measures ordering agreement; Jaccard measures top/bottom
+membership agreement. Window length is a modelling decision, not a
+neutral knob.
+

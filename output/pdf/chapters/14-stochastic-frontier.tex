@@ -1,0 +1,440 @@
+\hypertarget{sfa}{}
+\hypertarget{stochastic-frontier-analysis-full-derivation-and-its-narrow-role-here}{%
+\chapter{Stochastic frontier analysis: full derivation and its narrow
+role
+here}\label{stochastic-frontier-analysis-full-derivation-and-its-narrow-role-here}}
+
+Derive the half-normal composite-error density, conditional
+distribution, conditional moments, likelihood and score; understand the
+boundary test, unit invariance, identification limits and numerical
+implementation.
+
+\hypertarget{from-a-production-frontier-to-a-portfolio-residual-diagnostic}{%
+\section{From a production frontier to a portfolio-residual
+diagnostic}\label{from-a-production-frontier-to-a-portfolio-residual-diagnostic}}
+
+The classical production-frontier model says observed log output cannot
+exceed a stochastic frontier except through symmetric noise:
+
+\[
+y_{t} = x_{t}{}^{\prime}\beta  + v_{t} - u_{t}, v_{t} \sim N(0,\sigma _{v}^{2}), u_{t} \sim N^{+}(0,\sigma _{u}^{2}), u_{t} \perp  v_{t}.
+\]
+
+N\textsuperscript{+}(0,\ensuremath{\sigma }\textsubscript{u}\textsuperscript{2}) denotes a zero-mean normal
+distribution truncated below at zero, equivalently
+\textbar N(0,\ensuremath{\sigma }\textsubscript{u}\textsuperscript{2})\textbar. Define the composite
+disturbance
+
+\[
+\varepsilon _{t} = y_{t}-x_{t}{}^{\prime}\beta  = v_{t}-u_{t}.
+\]
+
+The symmetric component v represents ordinary noise; u is a non-negative
+shortfall. For a cost frontier the sign is reversed, \ensuremath{\varepsilon }=v+u, because
+inefficiency raises cost. Sign orientation must be specified before
+estimation.
+
+In this portfolio application, \ensuremath{\varepsilon } is a factor-model residual and u is
+merely a candidate one-sided residual component. Calling it managerial
+inefficiency would over-interpret the model: omitted factors, crash
+exposure, nonlinear payoffs, stale prices and changing volatility can
+also create negative skewness.
+
+\hypertarget{component-densities-and-change-of-variables}{%
+\section{Component densities and change of
+variables}\label{component-densities-and-change-of-variables}}
+
+Let \ensuremath{\phi } and \ensuremath{\Phi } be the standard normal density and cumulative distribution
+function:
+
+\[
+\phi (z)=(2\pi )^{-1/2}e^{-z^{2}/2}, \Phi (z)=\int _{-\infty}^{z}\phi (s)ds.
+\]
+
+The component densities are
+
+\[
+f_{v}(v)=\sigma _{v}^{-1}\phi (v/\sigma _{v}),
+\]
+
+\[
+f_{u}(u)=2\sigma _{u}^{-1}\phi (u/\sigma _{u})\cdot 1{u\geq 0}.
+\]
+
+Because \ensuremath{\varepsilon }=v\ensuremath{-}u, we have v=\ensuremath{\varepsilon }+u. The transformation from (v,u) to (\ensuremath{\varepsilon },u) has
+Jacobian determinant one. Independence therefore gives the joint density
+
+\[
+f_{\varepsilon ,u}(\varepsilon ,u)=f_{v}(\varepsilon +u)f_{u}(u), u\geq 0.
+\]
+
+Substitution yields
+
+\[
+f_{\varepsilon ,u}(\varepsilon ,u)= [1/(\pi \sigma _{v}\sigma _{u})] exp{-\frac{1}{2}[(\varepsilon +u)^{2}/\sigma _{v}^{2}+u^{2}/\sigma _{u}^{2}]}\cdot 1{u\geq 0}.
+\]
+
+\hypertarget{complete-the-square}{%
+\section{Complete the square}\label{complete-the-square}}
+
+Introduce total scale \ensuremath{\sigma } and shape ratio \ensuremath{\lambda }:
+
+\[
+\sigma ^{2}=\sigma _{v}^{2}+\sigma _{u}^{2}, \lambda =\sigma _{u}/\sigma _{v}.
+\]
+
+Define the conditional-location and conditional-scale quantities
+
+\[
+\mu _{*}=-\varepsilon \sigma _{u}^{2}/\sigma ^{2}, \sigma _{*}^{2}=\sigma _{u}^{2}\sigma _{v}^{2}/\sigma ^{2}.
+\]
+
+Now expand the left side and verify the key identity:
+
+\[
+(\varepsilon +u)^{2}/\sigma _{v}^{2} + u^{2}/\sigma _{u}^{2} = (u-\mu _{*})^{2}/\sigma _{*}^{2} + \varepsilon ^{2}/\sigma ^{2}.
+\]
+
+To see why, the coefficient on u\textsuperscript{2} is
+
+\[
+1/\sigma _{v}^{2}+1/\sigma _{u}^{2} = \sigma ^{2}/(\sigma _{u}^{2}\sigma _{v}^{2})=1/\sigma _{*}^{2},
+\]
+
+and the coefficient on u is
+
+\[
+-2\mu _{*}/\sigma _{*}^{2} = 2\varepsilon /\sigma _{v}^{2}.
+\]
+
+The remaining constant also agrees because
+\ensuremath{\mu }\textsubscript{*}\textsuperscript{2}/\ensuremath{\sigma }\textsubscript{*}\textsuperscript{2}+\ensuremath{\varepsilon }\textsuperscript{2}/\ensuremath{\sigma }\textsuperscript{2}=\ensuremath{\varepsilon }\textsuperscript{2}/\ensuremath{\sigma }\textsubscript{v}\textsuperscript{2}.
+This single square-completion step produces both the marginal likelihood
+and the conditional distribution.
+
+\hypertarget{deriving-the-composite-error-density}{%
+\section{Deriving the composite-error
+density}\label{deriving-the-composite-error-density}}
+
+Integrate u out of the joint density:
+
+\[
+f_{\varepsilon}(\varepsilon )=\int _{0}^{\infty}f_{\varepsilon ,u}(\varepsilon ,u)du.
+\]
+
+After the square completion, the u-integral is the upper probability of
+a N(\ensuremath{\mu }\textsubscript{*},\ensuremath{\sigma }\textsubscript{*}\textsuperscript{2}) variable:
+
+\[
+\int _{0}^{\infty} exp[-(u-\mu _{*})^{2}/(2\sigma _{*}^{2})]du = \sigma _{*}\sqrt{2\pi } \Phi (\mu _{*}/\sigma _{*}).
+\]
+
+Since \ensuremath{\sigma }\textsubscript{*}/(\ensuremath{\sigma }\textsubscript{u}\ensuremath{\sigma }\textsubscript{v})=1/\ensuremath{\sigma } and
+
+\[
+\mu _{*}/\sigma _{*} = -\varepsilon \sigma _{u}/(\sigma \sigma _{v}) = -\lambda \varepsilon /\sigma ,
+\]
+
+the half-normal SFA composite-error density is
+
+\[
+f_{\varepsilon}(\varepsilon ) = (2/\sigma ) \phi (\varepsilon /\sigma ) \Phi (-\lambda \varepsilon /\sigma ).
+\]
+
+When \ensuremath{\lambda }=0, \ensuremath{\Phi }(0)=1/2 and the density reduces to
+\ensuremath{\sigma }\textsuperscript{\ensuremath{-}1}\ensuremath{\phi }(\ensuremath{\varepsilon }/\ensuremath{\sigma }), the ordinary Gaussian error. Positive \ensuremath{\lambda }
+tilts mass toward negative residuals.
+
+\hypertarget{deriving-u-conditional-on-the-observed-residual}{%
+\section{Deriving u conditional on the observed
+residual}\label{deriving-u-conditional-on-the-observed-residual}}
+
+Bayes\textquotesingle{} rule gives f(u\textbar \ensuremath{\varepsilon })=f(\ensuremath{\varepsilon },u)/f(\ensuremath{\varepsilon }).
+Cancelling all terms independent of u leaves a normal kernel restricted
+to u\ensuremath{\geq }0:
+
+\[
+f(u|\varepsilon )= \phi [(u-\mu _{*})/\sigma _{*}] / [\sigma _{*}\Phi (\mu _{*}/\sigma _{*})], u\geq 0.
+\]
+
+Thus
+
+\[
+u|\varepsilon  \sim N(\mu _{*},\sigma _{*}^{2}) \quad \text{truncated below at }0.
+\]
+
+Let z\textsubscript{*}=\ensuremath{\mu }\textsubscript{*}/\ensuremath{\sigma }\textsubscript{*} and define
+the inverse Mills ratio r(z)=\ensuremath{\phi }(z)/\ensuremath{\Phi }(z). Standard truncated-normal
+integration gives
+
+\[
+E(u|\varepsilon )=\mu _{*}+\sigma _{*}r(z_{*}),
+\]
+
+\[
+\operatorname{mode}(u|\varepsilon )=max(0,\mu _{*}),
+\]
+
+\[
+Var(u|\varepsilon )=\sigma _{*}^{2}[1-z_{*}r(z_{*})-r(z_{*})^{2}].
+\]
+
+The first expression is the Jondrow-Lovell-Materov-Schmidt conditional
+mean. A very negative \ensuremath{\varepsilon } makes \ensuremath{\mu }\textsubscript{*} positive, shifting
+conditional mass toward a larger one-sided shortfall. A positive \ensuremath{\varepsilon } makes
+\ensuremath{\mu }\textsubscript{*} negative, but truncation ensures E(u\textbar \ensuremath{\varepsilon })
+remains non-negative.
+
+\hypertarget{deriving-the-conditional-exponential-score}{%
+\section{Deriving the conditional exponential
+score}\label{deriving-the-conditional-exponential-score}}
+
+In production SFA, exp(\ensuremath{-}u) is often interpreted as technical efficiency
+when y is log output. Here returns have arbitrary reporting units, so
+first derive the more general moment for c\textgreater0:
+
+\[
+E[e^{-cu}|\varepsilon ] = [1/\Phi (\mu _{*}/\sigma _{*})] \int _{0}^{\infty} e^{-cu} \phi [(u-\mu _{*})/\sigma _{*}]du/\sigma _{*}.
+\]
+
+Complete a second square in the exponent:
+
+\[
+-cu-(u-\mu _{*})^{2}/(2\sigma _{*}^{2}) = -[u-(\mu _{*}-c\sigma _{*}^{2})]^{2}/(2\sigma _{*}^{2}) - c\mu _{*} + c^{2}\sigma _{*}^{2}/2.
+\]
+
+The remaining integral is another truncated normal probability, giving
+
+\[
+E[e^{-cu}|\varepsilon ] = exp(-c\mu _{*}+c^{2}\sigma _{*}^{2}/2) \cdot  \Phi [(\mu _{*}-c\sigma _{*}^{2})/\sigma _{*}] / \Phi (\mu _{*}/\sigma _{*}).
+\]
+
+For classical log-output efficiency set c=1. For a return series, use
+c=1/\ensuremath{\sigma } and define the scale-free diagnostic score
+
+\[
+TE_{scale-free}(\varepsilon )=E[exp(-u/\sigma )|\varepsilon ]
+\]
+
+\[
+= exp[-\mu _{*}/\sigma  + \frac{1}{2}(\sigma _{*}/\sigma )^{2}] \cdot  \Phi [\mu _{*}/\sigma _{*}-\sigma _{*}/\sigma ] / \Phi (\mu _{*}/\sigma _{*}).
+\]
+
+Why is this invariant? If returns are multiplied by a positive constant
+a---for example, decimals to percentages---then \ensuremath{\varepsilon }, \ensuremath{\sigma }, \ensuremath{\mu }\textsubscript{*}
+and \ensuremath{\sigma }\textsubscript{*} all multiply by a. Every ratio in the last
+expression is unchanged. In contrast, exp(\ensuremath{-}u) changes under a unit
+conversion and is unsuitable for ranking return series reported on
+different scales.
+
+\hypertarget{a-numerical-conditional-shortfall-example}{%
+\section{A numerical conditional-shortfall
+example}\label{a-numerical-conditional-shortfall-example}}
+
+Take \ensuremath{\sigma }\textsubscript{v}=0.015, \ensuremath{\sigma }\textsubscript{u}=0.010 and an observed
+residual \ensuremath{\varepsilon }=\ensuremath{-}0.020. Then
+
+\[
+\sigma =0.01803, \lambda =0.6667, \mu _{*}=0.006154, \sigma _{*}=0.008321, z_{*}=0.7396.
+\]
+
+Because r(0.7396)=0.3940,
+
+\[
+E(u|\varepsilon )=0.006154+0.008321(0.3940)=0.009432.
+\]
+
+The conditional mode is 0.006154 and the scale-free exponential score is
+approximately 0.6257. If all returns are multiplied by 100,
+recomputation produces exactly the same 0.6257 score up to numerical
+rounding.
+
+\hypertarget{log-likelihood-and-analytic-score}{%
+\section{Log-likelihood and analytic
+score}\label{log-likelihood-and-analytic-score}}
+
+For observation t, define z\textsubscript{t}=\ensuremath{\varepsilon }\textsubscript{t}/\ensuremath{\sigma } and
+h\textsubscript{t}=\ensuremath{-}\ensuremath{\lambda }z\textsubscript{t}. The log-likelihood contribution
+is
+
+\[
+\ell _{t}(\beta ,\sigma ,\lambda )=log 2-log \sigma +log \phi (z_{t})+log \Phi (h_{t}).
+\]
+
+The sample log-likelihood is
+\ensuremath{\ell }=\ensuremath{\sum }\textsubscript{t=1}\textsuperscript{T}\ensuremath{\ell }\textsubscript{t}. Let
+R(h)=\ensuremath{\phi }(h)/\ensuremath{\Phi }(h). Holding \ensuremath{\lambda } fixed, differentiation gives
+
+\[
+\partial \ell _{t}/\partial \varepsilon _{t} = -[z_{t}+\lambda R(h_{t})]/\sigma .
+\]
+
+Since \ensuremath{\varepsilon }\textsubscript{t}=y\textsubscript{t}\ensuremath{-}x\textsubscript{t}\ensuremath{{}^{\prime}}\ensuremath{\beta } and
+\ensuremath{\partial }\ensuremath{\varepsilon }\textsubscript{t}/\ensuremath{\partial }\ensuremath{\beta }=\ensuremath{-}x\textsubscript{t},
+
+\[
+\partial \ell _{t}/\partial \beta  = x_{t}[z_{t}+\lambda R(h_{t})]/\sigma .
+\]
+
+Holding \ensuremath{\varepsilon } and \ensuremath{\lambda } fixed, \ensuremath{\partial }z/\ensuremath{\partial }\ensuremath{\sigma }=\ensuremath{-}z/\ensuremath{\sigma } and \ensuremath{\partial }h/\ensuremath{\partial }\ensuremath{\sigma }=\ensuremath{\lambda }z/\ensuremath{\sigma }, so
+
+\[
+\partial \ell _{t}/\partial \sigma  = [-1+z_{t}^{2}+\lambda z_{t}R(h_{t})]/\sigma .
+\]
+
+Finally, holding \ensuremath{\varepsilon } and \ensuremath{\sigma } fixed, \ensuremath{\partial }h/\ensuremath{\partial }\ensuremath{\lambda }=\ensuremath{-}z, hence
+
+\[
+\partial \ell _{t}/\partial \lambda  = -z_{t}R(h_{t}).
+\]
+
+If optimisation uses \ensuremath{\eta }=log \ensuremath{\sigma } and \ensuremath{\kappa }=log \ensuremath{\lambda }, apply the chain rule:
+\ensuremath{\partial }\ensuremath{\ell }/\ensuremath{\partial }\ensuremath{\eta }=\ensuremath{\sigma }\ensuremath{\partial }\ensuremath{\ell }/\ensuremath{\partial }\ensuremath{\sigma } and \ensuremath{\partial }\ensuremath{\ell }/\ensuremath{\partial }\ensuremath{\kappa }=\ensuremath{\lambda }\ensuremath{\partial }\ensuremath{\ell }/\ensuremath{\partial }\ensuremath{\lambda }. A pure log \ensuremath{\lambda } parameterisation cannot
+represent \ensuremath{\lambda }=0, so estimate the Gaussian null separately with
+\ensuremath{\sigma }\textsubscript{u} fixed at zero.
+
+\hypertarget{numerical-implementation-that-can-survive-difficult-tails}{%
+\section{Numerical implementation that can survive difficult
+tails}\label{numerical-implementation-that-can-survive-difficult-tails}}
+
+\begin{verbatim}
+from scipy.special import log_ndtr
+from scipy.stats import norm
+
+def loglik(theta, y, X):
+    beta = theta[:-2]
+    sigma = np.exp(theta[-2])       # positive total scale
+    lam = np.exp(theta[-1])         # positive under alternative
+    eps = y - X @ beta
+    z = eps / sigma
+    return np.sum(np.log(2.0) - np.log(sigma)
+                  + norm.logpdf(z) + log_ndtr(-lam * z))
+
+# Fit Gaussian null separately: lambda = sigma_u = 0.
+# Check analytic score against central finite differences.
+# Use multiple starts and record optimiser convergence/gradient norm.
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Use log \ensuremath{\Phi } via \texttt{log\_ndtr}; directly evaluating \ensuremath{\Phi } in a far tail
+  can underflow to zero.
+\item
+  Evaluate inverse Mills ratios with stable log-density minus log-CDF
+  calculations.
+\item
+  Parameterise positive scales logarithmically and transform back only
+  for reporting.
+\item
+  Check the analytic gradient against a high-accuracy central numerical
+  gradient at random interior parameter values.
+\item
+  Simulate known parameters, refit, and verify bias, coverage, null
+  rejection and unit invariance.
+\end{itemize}
+
+\hypertarget{boundary-likelihood-ratio-testing}{%
+\section{Boundary likelihood-ratio
+testing}\label{boundary-likelihood-ratio-testing}}
+
+The null H\textsubscript{0}:\ensuremath{\sigma }\textsubscript{u}=0 is on the boundary
+\ensuremath{\sigma }\textsubscript{u}\ensuremath{\geq }0. Under the null, \ensuremath{\lambda }=0 and the model collapses to a
+Gaussian disturbance. Let \ensuremath{\ell }\textsubscript{1} be the maximised SFA
+log-likelihood and \ensuremath{\ell }\textsubscript{0} the maximised Gaussian-null
+log-likelihood:
+
+\[
+LR = 2(\ell _{1}-\ell _{0}) \geq  0.
+\]
+
+The usual \ensuremath{\chi }\textsuperscript{2}\textsubscript{1} reference assumes an interior null and is
+invalid. Under standard boundary regularity conditions,
+
+\[
+LR \Rightarrow  \frac{1}{2}\chi ^{2}_{0} + \frac{1}{2}\chi ^{2}_{1},
+\]
+
+where \ensuremath{\chi }\textsuperscript{2}\textsubscript{0} is a point mass at zero. Therefore
+
+\[
+p=1 \text{ if } LR=0; p=\frac{1}{2}\cdot P(\chi ^{2}_{1}\geq LR) \text{ if } LR>0.
+\]
+
+There are 25 portfolio-specific SFA boundary tests, so apply BH FDR to
+those 25 p-values as one prespecified family. Only portfolios with
+q\ensuremath{\leq }0.05 receive an \texttt{sfa\_rank}; all others are explicitly marked
+unsupported rather than quietly ordered.
+
+\hypertarget{identification-why-shape-not-merely-location-matters}{%
+\section{Identification: why shape, not merely location,
+matters}\label{identification-why-shape-not-merely-location-matters}}
+
+For the half-normal distribution, E(u)=\ensuremath{\sigma }\textsubscript{u}\ensuremath{\sqrt{2/\pi}}, so
+
+\[
+E(\varepsilon )=E(v-u)=-\sigma _{u}\sqrt{2/\pi }.
+\]
+
+A regression intercept and a non-zero mean shortfall can both explain a
+constant downward location shift. If the model contains an unrestricted
+intercept, separating that intercept from E(u) relies primarily on
+distributional shape---especially skewness---not on the mean alone. That
+is weak evidence when residuals are non-normal, serially dependent and
+ARCH.
+
+More formally, identification asks whether distinct parameter vectors
+generate distinct observable distributions. If a flexible location term,
+omitted factors or time-varying volatility can mimic the skewness
+attributed to u, the economic label attached to \ensuremath{\sigma }\textsubscript{u} is
+not securely identified even when the optimiser returns a precise
+number.
+
+\textbf{Interpretation boundary.} A rejected Gaussian boundary null
+supports one-sided residual asymmetry under this parametric model. It
+does not identify managerial skill, technical efficiency, arbitrage or
+mispricing. The factor alpha remains the paper\textquotesingle s primary
+performance estimand.
+
+\hypertarget{simulation-verification-plan}{%
+\section{Simulation verification
+plan}\label{simulation-verification-plan}}
+
+\begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
+\toprule\noalign{}
+Experiment & Data-generating process & Expected result \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Gaussian null & \ensuremath{\sigma }\textsubscript{u}=0 & Boundary-test rejection near its
+nominal level after correct mixture calibration \\
+Interior SFA & \ensuremath{\sigma }\textsubscript{u}\textgreater0 with known
+\ensuremath{\beta },\ensuremath{\sigma }\textsubscript{v},\ensuremath{\sigma }\textsubscript{u} & Parameter bias falls with T;
+conditional-score code matches numerical integration \\
+Unit rescaling & Multiply y and X\ensuremath{\beta } by 100 & \ensuremath{\beta }/scale transforms
+appropriately; scale-free score and ranks stay unchanged \\
+Misspecified skewness & Skewed or jump residuals without half-normal u &
+SFA may reject, demonstrating that rejection is not unique evidence of
+inefficiency \\
+ARCH residuals & Gaussian mean with time-varying variance & Assess false
+one-sided detections caused by volatility dynamics \\
+\end{longtable}
+
+\begin{verbatim}
+for replication in range(R):
+    v = rng.normal(0, sigma_v, T)
+    u = np.abs(rng.normal(0, sigma_u, T))
+    y = X @ beta + v - u
+    fitted = fit_half_normal_sfa(y, X)
+    store(fitted.params, fitted.lr_pvalue, fitted.score)
+
+assert gradient_error < tolerance
+assert max_abs(score_decimal - score_percent) < 1e-10
+\end{verbatim}
+
+\textbf{Paper result.} Only ME5 BM4 survives the 25-test SFA boundary BH
+correction: raw p=0.000254 and q=0.006361. Therefore, the evidence
+supports one narrow asymmetry diagnostic, not a general 25-portfolio
+efficiency league table.
+

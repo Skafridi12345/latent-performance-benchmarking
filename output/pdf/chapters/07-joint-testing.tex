@@ -1,0 +1,133 @@
+\hypertarget{testing}{}
+\hypertarget{joint-testing-and-false-discovery-control}{%
+\chapter{Joint testing and false-discovery
+control}\label{joint-testing-and-false-discovery-control}}
+
+\hypertarget{the-joint-hacwald-test}{%
+\section{The joint HAC/Wald test}\label{the-joint-hacwald-test}}
+
+The null hypothesis is \emph{H\textsubscript{0}: \ensuremath{\alpha } = 0} for all 25
+portfolios. The dependence-robust Wald statistic is:
+
+\[
+W = \hat{\alpha }{}^{\prime}\hat{V}_{\mathrm{HAC}}^{-1}\hat{\alpha } \approx  \chi ^{2}_{25} \quad \text{under }H_{0}
+\]
+
+Use a linear solve rather than forming an explicit inverse:
+
+\begin{verbatim}
+W = float(alpha @ np.linalg.solve(V_hac, alpha))
+p = scipy.stats.chi2.sf(W, df=len(alpha))
+\end{verbatim}
+
+\textbf{Correct conclusion.} Rejecting joint zero alpha means at least
+some elements of the alpha vector are inconsistent with zero under the
+model. It does not say the alphas are positive, the ranking is stable,
+or a portfolio displays managerial skill.
+
+\hypertarget{the-conventional-grs-test}{%
+\section{The conventional GRS test}\label{the-conventional-grs-test}}
+
+\[
+GRS = [(T-N-K)/N] \cdot  [1 + \bar{f}{}^{\prime}\hat{\Omega }_{f}^{-1}\bar{f}]^{-1} \cdot  \hat{\alpha }{}^{\prime}\hat{\Sigma}_{\varepsilon}^{-1}\hat{\alpha } \sim F_{N,T-N-K}
+\]
+
+Here \ensuremath{\hat{\Sigma }}\textsubscript{\ensuremath{\varepsilon }} is the N \ensuremath{\times } N contemporaneous residual
+covariance, \ensuremath{\hat{\Omega }}\textsubscript{f} is the K \ensuremath{\times } K factor covariance, and \ensuremath{\bar{f}} is
+the sample mean factor vector. The quadratic form
+\ensuremath{\hat{\alpha }}\ensuremath{{}^{\prime}}\ensuremath{\hat{\Sigma }}\textsubscript{\ensuremath{\varepsilon }}\textsuperscript{\ensuremath{-}1}\ensuremath{\hat{\alpha }} asks whether alpha is large
+relative to residual risk. The factor term discounts this evidence when
+the factors themselves have a large sample mean relative to their
+covariance.
+
+Why the F distribution? Under a correctly specified linear factor model
+with residual vectors that are independent through time, jointly
+Gaussian, homoskedastic and independent of factor realisations, the
+appropriately scaled alpha quadratic form can be written as a ratio of
+independent quadratic forms. That ratio has an exact
+F\textsubscript{N,T\ensuremath{-}N\ensuremath{-}K} distribution. Serial dependence, conditional
+heteroskedasticity or non-normality breaks the exact finite-sample
+argument.
+
+\textbf{Assumption ledger.} GRS is not ``wrong''; it answers a sharper
+question under stronger assumptions. In this study, residual diagnostics
+reject several of those assumptions, so GRS is a conventional
+sensitivity check and the HAC/Wald statistic is the primary joint
+inference.
+
+\hypertarget{why-25-individual-p-values-need-correction}{%
+\section{Why 25 individual p-values need
+correction}\label{why-25-individual-p-values-need-correction}}
+
+If 25 true null hypotheses are each tested at 5\%, false positives
+become likely. The Benjamini-Hochberg (BH) procedure controls the
+expected proportion of false discoveries among the rejected hypotheses
+under its stated dependence conditions.
+
+\begin{enumerate}
+\tightlist
+\item
+  Sort p-values: p\textsubscript{(1)} \ensuremath{\leq } \ldots{} \ensuremath{\leq } p\textsubscript{(m)}.
+\item
+  Find the largest k satisfying p\textsubscript{(k)} \ensuremath{\leq } kq/m.
+\item
+  Reject hypotheses 1 through k.
+\end{enumerate}
+
+\hypertarget{a-complete-bh-example}{%
+\section{A complete BH example}\label{a-complete-bh-example}}
+
+Suppose m = 5 tests produce p-values (0.003, 0.011, 0.018, 0.040,
+0.230), already sorted, and the target FDR is q = 0.05. The step-up
+thresholds are:
+
+\begin{longtable}[]{@{}p{0.14\textwidth}p{0.22\textwidth}p{0.22\textwidth}p{0.30\textwidth}@{}}
+\toprule\noalign{}
+Order i & p\textsubscript{(i)} & i q/m & Passes? \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 0.003 & 0.010 & Yes \\
+2 & 0.011 & 0.020 & Yes \\
+3 & 0.018 & 0.030 & Yes \\
+4 & 0.040 & 0.040 & Yes \\
+5 & 0.230 & 0.050 & No \\
+\end{longtable}
+
+The largest passing order is k = 4, so the first four nulls are
+rejected. Notice the step-up logic: one does not stop at the first local
+failure. The adjusted q-values follow from
+
+\[
+q_{(i)} = \min_{j\geq i}{m p_{(j)}/j}, \quad \text{truncated at 1 and mapped back to the original order}.
+\]
+
+BH controls FDR under independence and under broad positive-dependence
+conditions. Portfolio tests are correlated, so the full dependence
+structure should still be reported and the discovery family must be
+stated explicitly. A more conservative arbitrary-dependence procedure
+exists, but needlessly replacing BH without a design argument can
+destroy power.
+
+\begin{verbatim}
+def bh_qvalues(p):
+    p = np.asarray(p, float)
+    m = p.size
+    order = np.argsort(p)
+    ranked = p[order]
+    adjusted = ranked * m / np.arange(1, m + 1)
+    adjusted = np.minimum.accumulate(adjusted[::-1])[::-1]
+    q = np.empty(m)
+    q[order] = np.clip(adjusted, 0, 1)
+    return q
+\end{verbatim}
+
+\textbf{Keep separate testing families separate.} The 25 raw-alpha tests
+and 25 SFA boundary tests answer different questions. Correct each
+family separately and report the family definition.
+
+In the study, five raw alphas survive 5\% BH control, but four are
+significantly negative. ``Significant'' is therefore not synonymous with
+``good.''
+

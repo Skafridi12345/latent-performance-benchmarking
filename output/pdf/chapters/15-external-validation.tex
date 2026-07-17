@@ -1,0 +1,70 @@
+\hypertarget{external}{}
+\hypertarget{external-validation-source-reconciliation-and-status-semantics}{%
+\chapter{External validation, source reconciliation and status
+semantics}\label{external-validation-source-reconciliation-and-status-semantics}}
+
+\hypertarget{four-different-validation-questions}{%
+\section{Four different validation
+questions}\label{four-different-validation-questions}}
+
+\begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
+\toprule\noalign{}
+Validation & Question & Evidence \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Integrity & Is the local analytical panel internally valid? & Keys,
+nulls, calendar, balance, factor consistency \\
+Numerical replication & Does an independent implementation reproduce
+calculations? & statsmodels coefficient/HAC match \\
+Source reconciliation & Do local bytes match an identifiable official
+release? & Hashes, archives, overlapping-cell comparison \\
+Literature anchor & Are broad patterns coherent with established
+evidence? & 5 \ensuremath{\times } 5 loadings/returns; historical sample checks \\
+\end{longtable}
+
+\textbf{Do not collapse these into ``validated.''} A calculation can
+reproduce perfectly on a locally corrupted input. Conversely, a fixed
+historical vintage can be internally valid even when it differs from a
+later revised official snapshot.
+
+\hypertarget{status-vocabulary}{%
+\section{Status vocabulary}\label{status-vocabulary}}
+
+\begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
+\toprule\noalign{}
+Status & Meaning & Blocks release? \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+{PASS} & The stated valid check completed successfully & No \\
+{FAIL} & A required and valid check failed & Yes \\
+{UNRESOLVED} & A discrepancy exists but its cause cannot be determined &
+Visible; policy-dependent \\
+{NOT COMPARABLE} & The sources/vintages do not support the proposed
+equality comparison & No, but must be disclosed \\
+\end{longtable}
+
+\hypertarget{known-result-validation-without-result-fitting}{%
+\section{Known-result validation without result
+fitting}\label{known-result-validation-without-result-fitting}}
+
+Check broad expectations---such as HML loading increasing toward high
+book-to-market and SMB exposure changing across size groups---but treat
+them as diagnostics. Unexpected patterns trigger investigation; they
+must not be overwritten or tuned away.
+
+\begin{verbatim}
+comparison = local.merge(official, on=["date","portfolio"], suffixes=("_local","_official"))
+comparison["abs_diff"] = (
+    comparison["return_local"] - comparison["return_official"]
+).abs()
+summary = {
+    "max_abs_diff": comparison["abs_diff"].max(),
+    "date_of_max": comparison.loc[comparison["abs_diff"].idxmax(), "date"],
+    "n_above_tol": int((comparison["abs_diff"] > tolerance).sum()),
+}
+\end{verbatim}
+

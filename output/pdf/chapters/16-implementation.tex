@@ -1,0 +1,212 @@
+\hypertarget{implementation}{}
+\hypertarget{complete-reproducible-implementation-architecture}{%
+\chapter{Complete reproducible implementation
+architecture}\label{complete-reproducible-implementation-architecture}}
+
+\hypertarget{suggested-repository-structure}{%
+\section{Suggested repository
+structure}\label{suggested-repository-structure}}
+
+\begin{verbatim}
+project/
+|-- analysis/
+|   |-- data.py                    # parsing, joins, integrity
+|   |-- factor_models.py           # OLS and frozen-beta evaluation
+|   |-- joint_hac.py               # full alpha covariance
+|   |-- empirical_bayes.py         # profile ML and posterior
+|   |-- multiple_testing.py        # BH families
+|   |-- bootstrap.py               # common-date circular blocks
+|   |-- persistence.py             # overlap and transitions
+|   |-- forward_validation.py      # strict forward tests
+|   |-- incremental_validation.py  # rolling vs benchmark rankings
+|   |-- diagnostics.py             # JB, LB, ARCH, SFA
+|   |-- external_validation.py     # source and statsmodels checks
+|   `-- run_all.py                 # canonical orchestration
+|-- config/
+|   `-- analysis.yaml
+|-- data/
+|   |-- raw/                       # immutable
+|   `-- SOURCES.md
+|-- results/
+|   |-- tables/
+|   |-- figures/
+|   `-- run_manifest.json
+|-- reports/
+|   `-- generate_report.py
+|-- tests/
+|-- requirements-dev-lock.txt
+`-- README.md
+\end{verbatim}
+
+\hypertarget{canonical-pipeline}{%
+\section{Canonical pipeline}\label{canonical-pipeline}}
+
+Load + validate
+
+Estimate + infer
+
+Resample + validate
+
+Export canonical tables
+
+Generate report
+
+\begin{verbatim}
+python -m pip install -r requirements-dev-lock.txt
+pytest -q
+ruff check .
+MPLBACKEND=Agg python -m analysis.run_all
+python -m analysis.export_tables
+python reports/generate_report.py
+\end{verbatim}
+
+\hypertarget{run-manifest}{%
+\section{Run manifest}\label{run-manifest}}
+
+A run manifest should record:
+
+\begin{itemize}
+\tightlist
+\item
+  input paths, byte sizes and hashes;
+\item
+  sample dates, dimensions and weighting block;
+\item
+  model, factor columns, return units and annualisation;
+\item
+  HAC lag/kernel/correction and covariance diagnostics;
+\item
+  bootstrap type, block length, draws and seed;
+\item
+  rolling window, step, forward horizon and comparison benchmarks;
+\item
+  software/Python versions, Git commit if available, runtime and output
+  hashes.
+\end{itemize}
+
+\hypertarget{essential-tests}{%
+\section{Essential tests}\label{essential-tests}}
+
+\hypertarget{data-tests}{%
+\subsection{Data tests}\label{data-tests}}
+
+\begin{itemize}
+\tightlist
+\item
+  Duplicate key rejection
+\item
+  Missing month rejection
+\item
+  Panel balance
+\item
+  Factor consistency
+\item
+  Unit and block detection
+\end{itemize}
+
+\hypertarget{estimator-tests}{%
+\subsection{Estimator tests}\label{estimator-tests}}
+
+\begin{itemize}
+\tightlist
+\item
+  OLS vs statsmodels
+\item
+  Joint HAC diagonal special case
+\item
+  PSD safeguards
+\item
+  EB shrinkage simulations
+\item
+  GRS/Wald null and alternative
+\end{itemize}
+
+\hypertarget{validation-tests}{%
+\subsection{Validation tests}\label{validation-tests}}
+
+\begin{itemize}
+\tightlist
+\item
+  No-look-ahead dates
+\item
+  Frozen-beta invariants
+\item
+  Common-date bootstrap
+\item
+  BH edge cases
+\item
+  Increment sign conventions
+\end{itemize}
+
+\hypertarget{reporting-tests}{%
+\subsection{Reporting tests}\label{reporting-tests}}
+
+\begin{itemize}
+\tightlist
+\item
+  Headline/table consistency
+\item
+  No p-value printed as zero
+\item
+  Status semantics
+\item
+  All claims generated from canonical tables
+\item
+  Readable rendered pages
+\end{itemize}
+
+\hypertarget{two-notebooks-two-purposes}{%
+\section{Two notebooks, two purposes}\label{two-notebooks-two-purposes}}
+
+A beginner benefits from separating conceptual verification from full
+empirical reproduction. The teaching notebook should be tiny enough to
+inspect every matrix. The replication notebook should call production
+functions rather than contain a second, drifting implementation.
+
+\begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
+\toprule\noalign{}
+Notebook & Suggested cells & Required outputs \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{01\_mathematical\_foundations.ipynb} & Simulate factors and
+three portfolios; derive OLS by hand; compare matrix OLS; build
+\ensuremath{\Gamma }\textsubscript{0} and \ensuremath{\Gamma }\textsubscript{1}; complete the EB square;
+generate circular blocks; simulate half-normal SFA; compare
+analytic/numerical gradients & Small matrices printed in full,
+hand-versus-code equality assertions, conditional-density integral equal
+to one, SFA unit-invariance assertion \\
+\textbf{02\_full\_replication.ipynb} & Load manifest; call canonical
+data validation; fit FF3; joint HAC/Wald/GRS/BH; EB; bootstrap;
+persistence; forward/incremental tests; diagnostics/SFA; FF5 and source
+checks & Canonical tables loaded from disk, headline reconciliation
+table, hashes and run metadata; no duplicated estimator code \\
+\end{longtable}
+
+\hypertarget{a-literate-cell-pattern}{%
+\section{A literate cell pattern}\label{a-literate-cell-pattern}}
+
+\begin{verbatim}
+# Question
+# Does the full joint HAC diagonal reproduce the 25 separate HAC variances?
+
+# Mathematical object
+# V_HAC = c * [Gamma_0 + sum_l w_l(Gamma_l + Gamma_l.T)]
+
+# Computation
+V_joint = joint_newey_west_alpha_covariance(resid, X, lags=12)
+v_separate = np.array([single_alpha_hac_variance(resid[:, i], X, 12)
+                       for i in range(N)])
+
+# Falsifiable check
+np.testing.assert_allclose(np.diag(V_joint), v_separate, rtol=1e-10)
+
+# Interpretation
+# Equality validates implementation consistency; it does not validate the model.
+\end{verbatim}
+
+Each notebook section should state the question, mathematical object,
+computation, falsifiable check and interpretation. This makes the
+notebook an audit trail rather than a scrapbook of commands.
+

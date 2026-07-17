@@ -1,0 +1,146 @@
+\hypertarget{exercises}{}
+\hypertarget{exercises-with-guided-solutions}{%
+\chapter{Exercises with guided
+solutions}\label{exercises-with-guided-solutions}}
+
+Exercise 1 - Unit conversion
+
+A monthly alpha is 0.00085. The linear annualised value is 0.00085 \ensuremath{\times } 12
+\ensuremath{\times } 10,000 = \textbf{102 basis points/year}. This does not compound
+monthly returns.
+
+Exercise 2 - Why is a many-to-many merge dangerous?
+
+It replicates the same economic observation. Point estimates may be
+reweighted and standard errors treat duplicate rows as new information.
+Validate key uniqueness before and after every join.
+
+Exercise 3 - Joint rejection with mostly uncertain individual ranks
+
+A joint test aggregates evidence across the alpha vector using
+covariance. It can reject all-zero even while many individual posterior
+intervals cross zero and ranks overlap. Joint existence, individual
+magnitude and ordering precision are different questions.
+
+Exercise 4 - BH calculation
+
+With m = 25 and q = 0.05, the first two BH thresholds are 0.002 and
+0.004. Raw p-values 0.000254 and 0.0063 produce only one discovery at
+these positions because the second exceeds 0.004, unless a later ordered
+p-value satisfies its larger threshold.
+
+Exercise 5 - Why resample common dates?
+
+If each portfolio resamples different dates, same-month common shocks
+are destroyed. Joint score covariance and rank co-movement are then
+understated.
+
+Exercise 6 - Why refit \ensuremath{\mu } and \ensuremath{\tau } inside each bootstrap?
+
+They are estimated quantities. Holding them fixed conditions away
+hyperparameter-estimation uncertainty and makes rank/score intervals too
+narrow.
+
+Exercise 7 - Overlap arithmetic
+
+Two 120-month windows 60 months apart share 60 months, so overlap is
+(120\ensuremath{-}60)/120 = 50\%. They are not independent persistence observations.
+
+Exercise 8 - Frozen beta
+
+Future alpha is evaluated relative to the risk exposure estimated from
+training data. Re-estimating beta on future observations lets evaluation
+data redefine the benchmark residual and introduces look-ahead.
+
+Exercise 9 - Positive forward spread but no dynamic increment
+
+A stable cross-sectional ordering can predict future outcomes. If the
+expanding-window ranking performs as well as the rolling rank, annual
+re-estimation contributes no additional timing information.
+
+Exercise 10 - Why is the oracle not a fair competitor?
+
+It uses the full sample, including evaluation periods, so it has
+look-ahead. It is an upper bound used to diagnose the strength of a
+fixed ordering, not an implementable strategy.
+
+Exercise 11 - HAC versus GRS
+
+GRS has an exact F reference under IID Gaussian errors. HAC/Wald is
+asymptotically robust to specified heteroskedasticity and
+autocorrelation. When diagnostics reject IID Gaussian residuals, GRS
+remains informative as a conventional reference but should not be
+primary.
+
+Exercise 12 - Source mismatch
+
+If local calculations reproduce exactly but local values differ from the
+current official snapshot, numerical implementation is validated while
+source equality is not. Report the two findings separately.
+
+Exercise 13 - SFA interpretation
+
+A supported one-sided residual component indicates asymmetry under the
+fitted distribution. It does not prove inefficiency, especially when
+omitted risks, nonlinearities and tail events can also create asymmetry.
+
+Exercise 14 - Design a negative control
+
+Simulate returns from the fitted factors with true alpha zero and
+dependent residuals. The pipeline should recover near-zero posterior
+centres, controlled false discoveries and no systematic forward
+increment. This tests calibration rather than reproducing the empirical
+result.
+
+Exercise 15 - Complete the SFA square
+
+Starting from (\ensuremath{\varepsilon }+u)\textsuperscript{2}/\ensuremath{\sigma }\textsubscript{v}\textsuperscript{2}+u\textsuperscript{2}/\ensuremath{\sigma }\textsubscript{u}\textsuperscript{2}, collect
+coefficients of u\textsuperscript{2} and u. Set
+\ensuremath{\sigma }\textsubscript{*}\textsuperscript{2}=\ensuremath{\sigma }\textsubscript{u}\textsuperscript{2}\ensuremath{\sigma }\textsubscript{v}\textsuperscript{2}/(\ensuremath{\sigma }\textsubscript{u}\textsuperscript{2}+\ensuremath{\sigma }\textsubscript{v}\textsuperscript{2})
+and
+\ensuremath{\mu }\textsubscript{*}=\ensuremath{-}\ensuremath{\varepsilon }\ensuremath{\sigma }\textsubscript{u}\textsuperscript{2}/(\ensuremath{\sigma }\textsubscript{u}\textsuperscript{2}+\ensuremath{\sigma }\textsubscript{v}\textsuperscript{2}).
+Expanding (u\ensuremath{-}\ensuremath{\mu }\textsubscript{*})\textsuperscript{2}/\ensuremath{\sigma }\textsubscript{*}\textsuperscript{2}+\ensuremath{\varepsilon }\textsuperscript{2}/\ensuremath{\sigma }\textsuperscript{2} reproduces
+every coefficient, proving the identity used in both marginalisation and
+conditioning.
+
+Exercise 16 - Derive the SFA marginal density
+
+Insert the completed square into f(\ensuremath{\varepsilon },u), factor out exp{[}\ensuremath{-}\ensuremath{\varepsilon }\textsuperscript{2}/(2\ensuremath{\sigma }\textsuperscript{2}){]},
+and integrate the remaining N(\ensuremath{\mu }\textsubscript{*},\ensuremath{\sigma }\textsubscript{*}\textsuperscript{2})
+kernel from zero to infinity. Use
+\ensuremath{\mu }\textsubscript{*}/\ensuremath{\sigma }\textsubscript{*}=\ensuremath{-}\ensuremath{\lambda }\ensuremath{\varepsilon }/\ensuremath{\sigma } and
+\ensuremath{\sigma }\textsubscript{*}/(\ensuremath{\sigma }\textsubscript{u}\ensuremath{\sigma }\textsubscript{v})=1/\ensuremath{\sigma } to obtain
+f(\ensuremath{\varepsilon })=(2/\ensuremath{\sigma })\ensuremath{\phi }(\ensuremath{\varepsilon }/\ensuremath{\sigma })\ensuremath{\Phi }(\ensuremath{-}\ensuremath{\lambda }\ensuremath{\varepsilon }/\ensuremath{\sigma }).
+
+Exercise 17 - Verify the SFA conditional mean
+
+Standardise w=(u\ensuremath{-}\ensuremath{\mu }\textsubscript{*})/\ensuremath{\sigma }\textsubscript{*}. The lower bound
+becomes \ensuremath{-}z\textsubscript{*}. Integration by parts gives
+\ensuremath{\int }\textsubscript{\ensuremath{-}z*}\textsuperscript{\ensuremath{\infty }}w\ensuremath{\phi }(w)dw=\ensuremath{\phi }(z\textsubscript{*}).
+Divide by \ensuremath{\Phi }(z\textsubscript{*}) and transform back:
+E(u\textbar \ensuremath{\varepsilon })=\ensuremath{\mu }\textsubscript{*}+\ensuremath{\sigma }\textsubscript{*}\ensuremath{\phi }(z\textsubscript{*})/\ensuremath{\Phi }(z\textsubscript{*}).
+
+Exercise 18 - Prove unit invariance
+
+Replace \ensuremath{\varepsilon },\ensuremath{\sigma }\textsubscript{u},\ensuremath{\sigma }\textsubscript{v} by a times themselves
+for a\textgreater0. Then \ensuremath{\sigma },\ensuremath{\mu }\textsubscript{*},\ensuremath{\sigma }\textsubscript{*} also
+multiply by a, while \ensuremath{\mu }\textsubscript{*}/\ensuremath{\sigma }, \ensuremath{\sigma }\textsubscript{*}/\ensuremath{\sigma } and
+\ensuremath{\mu }\textsubscript{*}/\ensuremath{\sigma }\textsubscript{*} do not change. Hence
+E{[}exp(\ensuremath{-}u/\ensuremath{\sigma })\textbar \ensuremath{\varepsilon }{]} is invariant. E{[}exp(\ensuremath{-}u)\textbar \ensuremath{\varepsilon }{]} is
+not.
+
+Exercise 19 - Boundary p-value
+
+If LR=6.635, the ordinary \ensuremath{\chi }\textsuperscript{2}\textsubscript{1} upper tail is
+approximately 0.010. The 50:50 boundary-mixture p-value is approximately
+0.005. If LR=0, the point mass implies p=1. Apply BH to the resulting
+family of 25 SFA p-values.
+
+Exercise 20 - Posterior shrinkage
+
+With \ensuremath{\mu }=\ensuremath{-}26, \ensuremath{\tau }=94, raw alpha a=250 and standard error s=150 bps/year, the
+diagonal-model weight is 94\textsuperscript{2}/(94\textsuperscript{2}+150\textsuperscript{2})=0.282. The posterior mean is
+0.282(250)+0.718(\ensuremath{-}26)=51.8 bps/year. The full-covariance answer need not
+equal this because other portfolios enter through off-diagonal sampling
+covariance.
+

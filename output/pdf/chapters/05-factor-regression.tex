@@ -1,0 +1,161 @@
+\hypertarget{factor-model}{}
+\hypertarget{factor-regression-and-the-meaning-of-alpha}{%
+\chapter{Factor regression and the meaning of
+alpha}\label{factor-regression-and-the-meaning-of-alpha}}
+
+\[
+FF3 regressiony_{\mathrm{it}} = \alpha _{i} + \beta _{i,M}(Mkt-RF)_{t} + \beta _{i,S}SMB_{t} + \beta _{i,H}HML_{t} + \varepsilon _{\mathrm{it}}
+\]
+
+For each portfolio, ordinary least squares chooses the intercept and
+factor loadings that minimise the sum of squared residuals. In matrix
+notation:
+
+\[
+\hat{\theta }_{i} = (X{}^{\prime}X)^{-1}X{}^{\prime}y_{i}, \hat{\theta }_{i} = (\hat{\alpha }_{i}, \hat{\beta }{}^{\prime}_{i}){}^{\prime}
+\]
+
+\hypertarget{deriving-ordinary-least-squares}{%
+\section{Deriving ordinary least
+squares}\label{deriving-ordinary-least-squares}}
+
+For one portfolio, write y=X\ensuremath{\theta }+\ensuremath{\varepsilon }, where the first column of X is a column
+of ones and the remaining columns contain factor returns. Define
+
+\[
+S(\theta ) = (y-X\theta ){}^{\prime}(y-X\theta ).
+\]
+
+Expanding and differentiating with respect to \ensuremath{\theta } gives
+
+\[
+S(\theta )=y{}^{\prime}y-2\theta {}^{\prime}X{}^{\prime}y+\theta {}^{\prime}X{}^{\prime}X\theta , \partial S/\partial \theta  = -2X{}^{\prime}y+2X{}^{\prime}X\theta .
+\]
+
+At an interior minimum, the gradient is zero:
+
+\[
+X{}^{\prime}X\hat{\theta }=X{}^{\prime}y \Longrightarrow  \hat{\theta }=(X{}^{\prime}X)^{-1}X{}^{\prime}y.
+\]
+
+The fitted residual vector is e=y\ensuremath{-}X\ensuremath{\hat{\theta }}. The normal equations imply X\ensuremath{{}^{\prime}}e=0:
+residuals are orthogonal to the intercept and every included factor in
+the estimation sample.
+
+\hypertarget{deriving-the-intercept-influence-weights}{%
+\section{Deriving the intercept influence
+weights}\label{deriving-the-intercept-influence-weights}}
+
+Substitute y=X\ensuremath{\theta }+\ensuremath{\varepsilon } into the estimator:
+
+\[
+\hat{\theta }-\theta =(X{}^{\prime}X)^{-1}X{}^{\prime}\varepsilon .
+\]
+
+Let q\textsubscript{0}=(1,0,\ldots,0)\ensuremath{{}^{\prime}} select the intercept. Then
+
+\[
+\hat{\alpha }-\alpha =q{}^{\prime}_{0}(X{}^{\prime}X)^{-1}X{}^{\prime}\varepsilon  = a{}^{\prime}\varepsilon  = \sum _{t=1}^{T}a_{t}\varepsilon _{t},
+\]
+
+where a\ensuremath{{}^{\prime}}=q\ensuremath{{}^{\prime}}\textsubscript{0}(X\ensuremath{{}^{\prime}}X)\textsuperscript{\ensuremath{-}1}X\ensuremath{{}^{\prime}} is a 1 \ensuremath{\times } T row
+vector. These a\textsubscript{t} weights are the bridge from OLS to the
+joint HAC construction.
+
+\hypertarget{toy-example-interpretation}{%
+\section{Interpretation}\label{toy-example-interpretation}}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{\ensuremath{\beta }:} sensitivity of the portfolio to a factor, conditional on
+  the other included factors.
+\item
+  \textbf{\ensuremath{\alpha }:} average residual return after the included linear factor
+  exposures are removed.
+\item
+  \textbf{\ensuremath{\varepsilon }:} month-specific residual, containing noise, omitted
+  factors, nonlinearities, changing exposures and measurement error.
+\end{itemize}
+
+\textbf{Alpha is not automatically skill.} For passive characteristic
+portfolios, a non-zero alpha is better described as a pricing error or
+benchmark-relative residual mean. The benchmark may be incomplete.
+
+\hypertarget{complete-numerical-toy-regression}{%
+\section{Complete numerical toy
+regression}\label{complete-numerical-toy-regression}}
+
+Use five months, one centred factor f=(-2,-1,0,1,2)\ensuremath{{}^{\prime}}, and three
+portfolios. All numbers below are monthly percentages solely to make the
+arithmetic readable.
+
+\begin{longtable}[]{@{}p{0.10\textwidth}p{0.16\textwidth}p{0.16\textwidth}p{0.16\textwidth}p{0.26\textwidth}@{}}
+\toprule\noalign{}
+Month & f & Portfolio A y & Portfolio B y & Portfolio C y \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & -2 & -1.70 & -0.83 & -2.55 \\
+2 & -1 & -1.00 & -0.58 & -1.26 \\
+3 & 0 & 0.40 & 0.32 & -0.08 \\
+4 & 1 & 1.00 & 0.42 & 1.14 \\
+5 & 2 & 2.30 & 1.17 & 2.25 \\
+\end{longtable}
+
+Here X={[}1,f{]}. Because \ensuremath{\sum }f\textsubscript{t}=0 and
+\ensuremath{\sum }f\textsuperscript{2}\textsubscript{t}=10,
+
+\[
+X{}^{\prime}X = [[5,0],[0,10]], (X{}^{\prime}X)^{-1} = [[1/5,0],[0,1/10]].
+\]
+
+Therefore \ensuremath{\hat{\alpha }} is the sample mean and
+\ensuremath{\hat{\beta }}=(\ensuremath{\sum }f\textsubscript{t}y\textsubscript{t})/(\ensuremath{\sum }f\textsuperscript{2}\textsubscript{t}). The
+fitted results are
+
+\begin{longtable}[]{@{}p{0.10\textwidth}p{0.16\textwidth}p{0.16\textwidth}p{0.16\textwidth}p{0.26\textwidth}@{}}
+\toprule\noalign{}
+Portfolio & \ensuremath{\hat{\alpha }} monthly & \ensuremath{\hat{\beta }} & Linear annualised \ensuremath{\alpha } & Residual vector \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+A & 0.20\% & 1.00 & 240 bps & (0.10,-0.20,0.20,-0.20,0.10) \\
+B & 0.10\% & 0.50 & 120 bps & (0.07,-0.18,0.22,-0.18,0.07) \\
+C & -0.10\% & 1.20 & -120 bps & (-0.05,0.04,0.02,0.04,-0.05) \\
+\end{longtable}
+
+Since the factor is centred, a\textsubscript{t}=1/5 for every t. The
+residual vectors are individually orthogonal to 1 and f, but they
+co-move across portfolios. That same-date co-movement is exactly what
+the full joint covariance retains.
+
+\hypertarget{reference-implementation}{%
+\section{Reference implementation}\label{reference-implementation}}
+
+\begin{verbatim}
+import numpy as np
+import statsmodels.api as sm
+
+def fit_factor_model(y, factors, hac_lags=12):
+    X = sm.add_constant(np.asarray(factors, float))
+    model = sm.OLS(np.asarray(y, float), X).fit()
+    robust = model.get_robustcov_results(
+        cov_type="HAC", maxlags=hac_lags, use_correction=True
+    )
+    return {
+        "alpha_monthly": model.params[0],
+        "alpha_bps_year": model.params[0] * 12 * 10_000,
+        "betas": model.params[1:],
+        "residuals": model.resid,
+        "hac_se_alpha": robust.bse[0],
+        "hac_p_alpha": robust.pvalues[0],
+    }
+\end{verbatim}
+
+Independent replication means comparing the canonical estimator with a
+separately implemented calculation such as statsmodels. Two functions
+calling the same internal routine are not independent replication.
+

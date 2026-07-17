@@ -1,0 +1,264 @@
+\hypertarget{question}{}
+\hypertarget{the-research-question}{%
+\chapter{The research question}\label{the-research-question}}
+
+The study examines 25 portfolios formed from the intersections of five
+size groups and five book-to-market groups. It asks whether their
+returns contain persistent performance unexplained by a standard factor
+benchmark, how uncertain any resulting ranking is, and whether a ranking
+estimated from the past predicts genuinely future benchmark-adjusted
+returns. This chapter states those questions precisely, fixes what would
+count as an answer to each, and explains why the exercise is far harder
+than running twenty-five regressions and reading off the largest
+intercept. The tools it invokes are all derived in Chapter~\ref{preliminaries};
+here they are assembled into a single research design.
+
+\section{Formalising the estimand and the three questions}\label{rq-estimand}
+
+Let $i=1,\dots,N$ index the $N=25$ portfolios and $t=1,\dots,T$ the
+$T=1{,}193$ months. For each portfolio the benchmark regression of
+Chapter~\ref{preliminaries} is
+\begin{equation}\label{eq:rq-model}
+y_{it}=\alpha_i+\beta_i^{\top}f_t+\varepsilon_{it},\qquad
+y_{it}=r_{it}-r_{ft},
+\end{equation}
+with $f_t$ the FF3 factor vector. The population object of interest is the
+$N$-vector of intercepts $\alpha=(\alpha_1,\dots,\alpha_N)^{\top}$ and,
+derived from it, the ranking that orders the portfolios from highest to
+lowest. Everything the study reports is a functional of $\alpha$ and of
+its estimation uncertainty. The research question decomposes into three
+sharply different statistical problems.
+
+\begin{longtable}[]{@{}p{0.06\textwidth}p{0.30\textwidth}p{0.28\textwidth}p{0.28\textwidth}@{}}
+\toprule\noalign{}
+& Question & Formal object & What counts as an answer \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Q1 & Is there benchmark-relative performance at all? & The vector
+$\alpha$ and the joint null $H_0:\alpha=0$ & A dependence-robust rejection
+of $H_0$ and per-portfolio evidence surviving multiplicity control \\
+Q2 & How well-determined is the ranking? & The rank vector
+$R=\operatorname{rank}(\hat\alpha^{\mathrm{post}})$ as a random object &
+An honest sampling/resampling distribution of each rank, not a point list \\
+Q3 & Does a past ranking predict future benchmark-adjusted returns, and
+does re-estimating it help? & The forward association between a frozen
+ranking and later alpha, and its \emph{increment} over a fixed ordering &
+A strictly leakage-free, dependence-robust test, and a decomposition
+separating dynamic from static content \\
+\end{longtable}
+
+Q1 is a question of \emph{inference} (Chapters~6--7); Q2 is a question of
+\emph{estimation uncertainty} (Chapters~8--9); Q3 is a question of
+\emph{prediction} (Chapters~11--12). They are logically independent: one
+can reject $H_0:\alpha=0$ (Q1) yet find the ranking almost undetermined
+(Q2) and its dynamic content null (Q3), which is in fact what happens.
+
+\section{Why ``performance'' is model-relative}\label{rq-model-relative}
+
+The estimand $\alpha_i$ is defined only \emph{relative to the chosen
+factors}. Writing the population projection of $y_i$ on $(1,f)$, the
+intercept is
+\[
+\alpha_i=\mathbb{E}[y_{it}]-\beta_i^{\top}\mathbb{E}[f_t],
+\]
+so $\alpha_i$ is the average excess return left after removing exposure to
+\emph{those} factors and nothing more. A non-zero $\alpha_i$ can arise from
+an omitted priced risk, a friction, a nonlinear payoff, a change in factor
+loadings over time, or genuine abnormal performance --- the regression
+cannot tell these apart. On the 25 test assets the interpretation is even
+narrower: these are the very portfolios from which the size and value
+factors are constructed, so their $\alpha$ is a \emph{pricing residual} of
+the model against its own building blocks, not a measure of skill. The
+course therefore never writes ``skill'' for $\alpha$; it writes
+``benchmark-relative'' and treats benchmark choice itself as a variable
+(the FF3-versus-FF5 sensitivity of Chapter~13).
+
+\section{Why this is harder than running 25 regressions}\label{rq-difficulties}
+
+A naive analysis would run \eqref{eq:rq-model} twenty-five times, take the
+largest $\hat\alpha_i$, and declare a winner. Seven features of the problem
+make that invalid; each is quantified below and handled by a specific tool
+from Chapter~\ref{preliminaries}.
+
+\subsection{1. The alpha estimates are correlated}
+
+The portfolios share calendar dates, common market shocks and overlapping
+construction rules, so their residuals $\varepsilon_{it}$ are correlated
+across $i$ within a month. By the influence-weight identity
+\eqref{eq:influence}, $\hat\alpha_i-\alpha_i=\sum_t a_t\varepsilon_{it}$
+with weights common to all portfolios, so the alpha errors inherit that
+cross-sectional dependence and the estimator's covariance is a
+\emph{full} matrix $V$, not a diagonal one. This matters concretely: the
+precision of a comparison between two portfolios is
+\[
+\operatorname{Var}(\hat\alpha_i-\hat\alpha_j)=V_{ii}+V_{jj}-2V_{ij},
+\]
+which positive covariance $V_{ij}$ can make far smaller --- or, if
+negative, larger --- than the sum of the marginal variances. Twenty-five
+separate standard errors discard every $V_{ij}$ and therefore misstate
+both joint tests and rankings. The remedy is the joint HAC covariance of
+\S\ref{prelim-hac} and Chapter~6.
+
+\subsection{2. Selecting the largest estimate is a winner's curse}
+
+Even if every true $\alpha_i$ were equal, the largest \emph{observed}
+estimate would exceed the truth, because extreme draws combine signal with
+favourable noise. In the simplest case $\hat\alpha_i=\alpha_i+e_i$ with
+$e_i\sim N(0,\sigma^2)$ independent, the expected maximum of the noise
+alone is
+\[
+\mathbb{E}\Bigl[\max_{i\le N} e_i\Bigr]\ \approx\ \sigma\sqrt{2\ln N},
+\]
+so the top-ranked estimate is biased upward by roughly
+$\sigma\sqrt{2\ln 25}\approx 2.54\,\sigma$ in this idealisation. Reporting
+the raw maximum therefore overstates the leader and, symmetrically,
+understates the laggard. The correction is partial pooling: the
+empirical-Bayes shrinkage of \S\ref{prelim-eb} pulls noisy extremes toward
+the common mean by the weight $\tau^2/(\tau^2+v)$ of
+\eqref{eq:scalar-post}, and the James--Stein dominance result guarantees
+this reduces risk in dimension $N\ge 3$.
+
+\subsection{3. Testing twenty-five hypotheses inflates false discoveries}
+
+Screening $N=25$ nulls at level $\alpha=0.05$ each makes at least one false
+rejection likely even when all nulls hold: for independent tests
+\[
+\Pr(\text{at least one false positive})=1-(1-0.05)^{25}\approx 0.72,
+\]
+and the expected number of false positives is $N\alpha=1.25$. A ``5\%
+significant'' alpha found this way is uninformative on its own. The study
+controls the false-discovery rate with the Benjamini--Hochberg procedure of
+\S\ref{prelim-fdr}, reporting monotone $q$-values \eqref{eq:bh}, and keeps
+the raw-alpha family separate from the frontier-test family because they
+test different nulls.
+
+\subsection{4. Ranks are discontinuous}
+
+The rank of portfolio $i$,
+\[
+R_i=1+\sum_{j\ne i}\mathbf 1\{\hat s_j>\hat s_i\},
+\]
+is a step function of the scores $\hat s$: it is flat almost everywhere and
+jumps by an integer when two scores cross. Its derivative is zero wherever
+it is defined, so the delta method \eqref{eq:delta} cannot supply a
+standard error, and an arbitrarily small change in a score can move a rank
+by several positions. Rank uncertainty must therefore be obtained by
+resampling the \emph{entire} estimator, which is what the common-date
+circular block bootstrap of \S\ref{prelim-boot} and Chapter~9 does; the
+result is a rank interval, not a point.
+
+\subsection{5. Overlapping windows manufacture persistence}
+
+The rolling analysis uses windows of length $w=120$ months advanced by a
+step $s=12$. Two windows $k$ steps apart share $\max(0,w-ks)$ months, an
+overlap fraction
+\[
+\frac{w-ks}{w}=1-\frac{ks}{w},\qquad ks<w,
+\]
+so \emph{adjacent} windows ($k=1$) share $108/120=90\%$ of their data. A
+high correlation between adjacent rolling estimates is then largely
+mechanical: the two estimates are computed from almost the same months.
+Structural persistence can only be read from \emph{non-overlapping}
+comparisons, which require $ks\ge w$, i.e.\ $k\ge w/s=10$ steps $=120$
+months apart. Chapter~10 gives structural weight only to those disjoint
+comparisons, where persistence turns out to be weak.
+
+\subsection{6. A forward relation need not be dynamic skill}
+
+This is the subtle point on which the study turns. Suppose each cell has a
+\emph{fixed} benchmark-relative level $c_i$ (small-growth structurally
+poor, small-value structurally strong) so that both the training score and
+the future alpha are noisy readings of the same $c_i$:
+\[
+\hat s_{it}=c_i+u_{it},\qquad A^{+}_{i,t}=c_i+w_{i,t}.
+\]
+Then the cross-sectional correlation $\operatorname{Corr}_i(\hat s_{it},
+A^{+}_{i,t})$ is positive purely through the shared fixed effect $c_i$,
+with \emph{no time-varying information} in the ranking at all. A positive
+forward correlation is thus consistent with a merely \emph{stable}
+ordering. Distinguishing this from genuine dynamic forecasting requires
+comparing the time-varying rolling ranking against a fixed ordering on the
+same future data --- the incremental test of \S\ref{prelim-forecast} and
+Chapter~12, which is a Diebold--Mariano test of equal predictive accuracy
+\eqref{eq:dm}.
+
+\subsection{7. Alpha depends on the benchmark}
+
+Because $\alpha_i=\mathbb{E}[y_i]-\beta_i^{\top}\mathbb{E}[f]$ depends on
+which factors $f$ are included, enlarging the model changes both the
+loadings and the spanned space and hence the intercept. A portfolio that
+loads on a priced dimension absent from FF3 will show a spurious FF3 alpha
+that shrinks or reverses under FF5. The study measures this directly: on a
+common sample the FF3 and FF5 rankings correlate but a single portfolio
+moves eleven rank positions (Chapter~13). Benchmark dependence is a
+property of the estimand, not a nuisance to be tuned away.
+
+\section{The central logic: stable ordering versus dynamic skill}\label{rq-logic}
+
+The seven difficulties combine into one argument, which the reader should
+be able to reconstruct and, above all, to stop at the correct conclusion.
+
+\begin{enumerate}
+\tightlist
+\item
+  Historical benchmark-relative alpha varies across the cross-section
+  (description, Chapter~5).
+\item
+  A ranking formed from past alpha correlates with future
+  benchmark-adjusted returns (forward validation, Chapter~11).
+\item
+  But by difficulty~6 this is also what a \emph{fixed} ordering would
+  produce, so the rolling ranking is compared against static and
+  expanding-window orderings on identical future data (incremental test,
+  Chapter~12).
+\item
+  The rolling ranking adds no measurable increment over the fixed
+  ordering: the Diebold--Mariano differential is statistically
+  indistinguishable from zero.
+\item
+  Conclusion: the predictable component is a \emph{stable} cross-sectional
+  ordering of persistent characteristic mispricing, \emph{not} dynamic
+  timing skill.
+\end{enumerate}
+
+Formally, the study pits two hypotheses against each other. Let $\rho^{\mathrm{roll}}_t$
+and $\rho^{\mathrm{fix}}_t$ be the window-$t$ predictive scores of the
+rolling and fixed orderings and $d_t=\rho^{\mathrm{roll}}_t-\rho^{\mathrm{fix}}_t$.
+\[
+H_{\text{stable}}:\ \mathbb{E}(d_t)\le 0
+\qquad\text{versus}\qquad
+H_{\text{dynamic}}:\ \mathbb{E}(d_t)>0 .
+\]
+The forward test of Q3 establishes only that
+$\mathbb{E}(\rho^{\mathrm{roll}}_t)>0$; it is the incremental test that
+adjudicates $H_{\text{stable}}$ against $H_{\text{dynamic}}$, and it fails
+to reject $H_{\text{stable}}$. A student must be able to distinguish the
+weak, supported claim ``a past ranking correlates with future alpha'' from
+the strong, unsupported claim ``re-estimating a rolling ranking creates
+useful dynamic forecasts.'' Conflating the two is the central error the
+whole design is built to prevent.
+
+\section{What would count as evidence, and what the study does not claim}\label{rq-evidence}
+
+Each question is tied to a layer of evidence from Chapter~1, and each has a
+clear failure mode. Q1 is answered only if a \emph{dependence-robust}
+joint test rejects $H_0:\alpha=0$ and individual alphas survive
+false-discovery control; a rejection under an IID-Gaussian test alone
+(GRS) would not suffice, because the diagnostics reject those assumptions
+(Chapter~13). Q2 is answered by a rank \emph{distribution}; a point ranking
+with no interval is not an answer. Q3 is answered only by a strictly
+leakage-free forward test \emph{and} an incremental decomposition;
+in-sample fit, or a forward correlation without the incremental
+comparison, would leave $H_{\text{stable}}$ and $H_{\text{dynamic}}$
+unseparated.
+
+Finally, the study is explicit about its non-goals. It does not claim an
+implementable trading profit --- the reported spreads are gross of costs and
+short hard-to-borrow small-growth stocks; it does not claim causal skill;
+and it does not claim that its local data exactly match the current
+official source, a discrepancy left visible as \textsc{not\_comparable}
+(Chapter~4). Stating what is \emph{not} concluded is part of answering the
+research question honestly.
+

@@ -1,0 +1,319 @@
+\hypertarget{data}{}
+\hypertarget{data-portfolio-construction-units-and-provenance}{%
+\chapter{Data, portfolio construction, units and
+provenance}\label{data-portfolio-construction-units-and-provenance}}
+
+This chapter fixes the raw material of the whole study: the analytical
+grain of a single observation, the units in which returns and factors are
+measured, how the 25 test portfolios and the factors are constructed, the
+fail-closed checks that a panel must pass before any regression is run,
+and why reconciling a file against its official source is a different
+question from reproducing a number from that file. The estimator of
+Chapter~\ref{preliminaries} is only as trustworthy as the panel it
+consumes, so the discipline here is not clerical --- it is part of the
+statistical specification.
+
+\hypertarget{the-5-5-test-asset-grid}{%
+\section{The 5 \ensuremath{\times } 5 test-asset grid}\label{the-5-5-test-asset-grid}}
+
+At each annual formation date, every eligible US common stock
+(NYSE, AMEX and NASDAQ) is placed into one of five \emph{size} groups by
+market equity and, independently, one of five \emph{book-to-market}
+groups. The $5\times5=25$ intersections define 25 portfolios whose monthly
+returns are \emph{value-weighted}: each constituent enters in proportion
+to its market equity, so a handful of large firms can dominate a cell. The
+breakpoints are recomputed each year from NYSE stocks only, and a stock
+stays in its assigned cell until the next formation date. A label such as
+\texttt{SMALL\ HiBM} therefore denotes a \emph{characteristic cell} ---
+small firms with a high book-to-market ratio --- not a company, a managed
+fund, or a trading recommendation. The corner cells name the extremes:
+\texttt{SMALL\ LoBM} is small-growth, \texttt{SMALL\ HiBM} is small-value,
+\texttt{BIG\ LoBM} is large-growth and \texttt{BIG\ HiBM} is large-value;
+the interior cells are written \texttt{ME}$j$~\texttt{BM}$k$ for size
+quintile $j$ and book-to-market quintile $k$.
+
+Two properties of this grid drive design choices later. First, the cells
+are \emph{not independent entities}: neighbours share construction rules
+and, through the common market, share monthly shocks --- the source of the
+cross-sectional dependence handled by the joint covariance of
+Chapter~\ref{preliminaries} (\S\ref{prelim-hac}). Second, the grid is
+built from the very sorts (size and book-to-market) that define the SMB
+and HML factors, so regressing these portfolios on FF3 tests the model
+against its own raw material (\S\ref{prelim-ff}).
+
+\begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
+\toprule\noalign{}
+Term & Meaning & Common mistake \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Size & Market equity grouping & Confusing ``small'' with low price
+rather than low market capitalisation \\
+Book-to-market & Book equity divided by market equity & Reversing value
+and growth: high B/M is value; low B/M is growth \\
+Value-weighted return & Constituent returns weighted by market value &
+Accidentally parsing the equal-weighted block \\
+Portfolio-month & One portfolio observed in one calendar month & Joining
+files many-to-many and duplicating this grain \\
+\end{longtable}
+
+\hypertarget{returns-and-factors}{%
+\section{Returns and factors}\label{returns-and-factors}}
+
+The dependent variable of every regression is the portfolio's monthly
+\emph{excess} return,
+\[
+y_{it} = r_{it} - r_{ft},
+\]
+the total return $r_{it}$ of portfolio $i$ in month $t$ minus the
+one-month risk-free rate $r_{ft}$. The regressors are the traded factor
+returns collected in $f_t$:
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Mkt-RF:} the aggregate market return in excess of the risk-free
+  rate (itself an excess return).
+\item
+  \textbf{SMB} (small minus big): the size factor, long small firms and
+  short large ones.
+\item
+  \textbf{HML} (high minus low): the value factor, long high
+  book-to-market and short low.
+\item
+  \textbf{RMW and CMA:} profitability (robust minus weak) and investment
+  (conservative minus aggressive) factors, added by the five-factor model.
+\end{itemize}
+
+Because each regressor is itself an excess or self-financing long--short
+return, the dependent variable and the regressors sit on the same
+economic footing, and the intercept $\alpha_i$ inherits the units of a
+monthly excess return (\S\ref{prelim-ap}).
+
+\textbf{Units and annualisation.} The canonical analysis works in
+\emph{decimal monthly} returns, so a one-percent monthly return is
+$0.01$, not $1$. A monthly decimal alpha $a$ is reported in annualised
+basis points as $a\times 12\times 10{,}000$; for example $a=0.001$ becomes
+$0.001\times 12\times 10{,}000 = 120$ bps/year. This is a \emph{linear}
+reporting convention, not geometric compounding, chosen so that the
+reported figure is a transparent scaling of the estimated coefficient.
+Mixing percent and decimal units is the most common unit error and would
+inflate every alpha and standard error by a factor of one hundred; the
+loader therefore records and checks the units explicitly.
+
+\hypertarget{finance-foundations-for-a-mathematics-graduate}{%
+\section{Finance foundations for a mathematics
+graduate}\label{finance-foundations-for-a-mathematics-graduate}}
+
+\hypertarget{simple-and-portfolio-returns}{%
+\subsection{Simple and portfolio
+returns}\label{simple-and-portfolio-returns}}
+
+If an asset begins the month at price P\textsubscript{t\ensuremath{-}1}, pays
+dividend D\textsubscript{t}, and ends at P\textsubscript{t}, its simple
+total return is
+
+\[
+R_{t} = (P_{t} + D_{t} - P_{t-1}) / P_{t-1}.
+\]
+
+For J constituents with beginning-of-period portfolio weights
+w\textsubscript{jt\ensuremath{-}1}, \ensuremath{\sum }\textsubscript{j}w\textsubscript{jt\ensuremath{-}1}=1, the
+one-period portfolio return is
+
+\[
+R_{\mathrm{pt}} = \sum _{j=1}^{J} w_{jt-1}R_{\mathrm{jt}}.
+\]
+
+In a value-weighted portfolio, w\textsubscript{jt\ensuremath{-}1} is proportional to
+the firm\textquotesingle s market equity at the weighting date. Larger
+companies therefore receive larger weights.
+
+\hypertarget{why-subtract-the-risk-free-rate}{%
+\subsection{Why subtract the risk-free
+rate?}\label{why-subtract-the-risk-free-rate}}
+
+A risky investment must first compensate the investor for deferring
+consumption. The risk-free return r\textsubscript{ft} is the baseline
+return available without bearing the portfolio\textquotesingle s risky
+exposure. The excess return
+y\textsubscript{it}=r\textsubscript{it}\ensuremath{-}r\textsubscript{ft} is the part
+to be explained by risky factors and alpha.
+
+\hypertarget{market-equity-and-book-to-market}{%
+\subsection{Market equity and
+book-to-market}\label{market-equity-and-book-to-market}}
+
+\[
+\text{Market equity} = \text{share price} \times \text{shares outstanding},
+\]
+\[
+\text{Book-to-market} = \frac{\text{accounting book equity}}{\text{market equity}}.
+\]
+
+Market equity (``size'') measures how large the firm is in the market;
+book-to-market compares the accountant's valuation of the firm's equity to
+the market's. High book-to-market companies are conventionally called
+\emph{value} stocks --- the market prices them low relative to book --- and
+low book-to-market companies are called \emph{growth} stocks. These labels
+describe \emph{characteristics}, not guaranteed future returns, and the
+value/growth direction is the single most common labelling error: high
+B/M is value, low B/M is growth.
+
+\hypertarget{how-the-ff3-factor-portfolios-are-constructed}{%
+\subsection{How the FF3 factor portfolios are
+constructed}\label{how-the-ff3-factor-portfolios-are-constructed}}
+
+The 25 portfolios in this study are $5\times5$ \textbf{test assets}. They
+are related to, but not identical with, the six $2\times3$ portfolios used
+in the standard construction of the SMB and HML \emph{factors}. Writing
+$S$/$B$ for the two size groups (small, big) and $L$/$N$/$H$ for the three
+book-to-market groups (low, neutral, high), the six building-block
+portfolios are the intersections, and the textbook factor formulas average
+them:
+\[
+\mathrm{SMB} = \tfrac13(S/L + S/N + S/H) - \tfrac13(B/L + B/N + B/H),
+\]
+\[
+\mathrm{HML} = \tfrac12(S/H + B/H) - \tfrac12(S/L + B/L).
+\]
+SMB is thus the average small-cap return minus the average large-cap
+return holding book-to-market spread fixed, and HML is the average
+high-B/M return minus the average low-B/M return holding size fixed. Both
+are \emph{self-financing long--short} returns --- the long and short legs
+carry offsetting capital weights --- so they are returns on zero-cost
+portfolios, and Mkt-RF is likewise an excess return. The five-factor model
+appends two more long--short returns built the same way,
+\[
+\mathrm{RMW} = \text{(robust-profitability)} - \text{(weak-profitability)},
+\]
+\[
+\mathrm{CMA} = \text{(conservative-investment)} - \text{(aggressive-investment)}.
+\]
+
+The distinction between the $2\times3$ factor-building portfolios and the
+$5\times5$ test assets matters: the study regresses the \emph{test assets}
+on the \emph{factors}, and because both come from size and book-to-market
+sorts the resulting alpha is a residual of the model against its own
+inputs.
+
+\textbf{Economic meaning of the regression.} The regression
+$y_{it}=\alpha_i+\beta_i^{\top}f_t+\varepsilon_{it}$ asks how much of a
+portfolio's excess return moves one-for-one with the broad market, size
+and value returns; the loadings $\beta_i$ are those sensitivities and the
+intercept $\alpha_i$ is the average return left after the fitted linear
+co-movement is removed. A positive $\beta_{i,\mathrm{HML}}$, for instance,
+says the cell behaves like a value portfolio, which the sanity checks of
+Chapter~13 expect to rise across the book-to-market columns.
+
+\hypertarget{fail-closed-panel-validation}{%
+\section{Fail-closed panel
+validation}\label{fail-closed-panel-validation}}
+
+The analytical grain is exactly one \emph{portfolio-month}: one row per
+portfolio per calendar month, $25\times1{,}193 = 29{,}825$ rows in the
+canonical panel. A loader is \emph{fail-closed} when it raises an error
+rather than silently proceeding on any violation of that grain, so that a
+corrupt panel can never reach a regression. Six checks are enforced, each
+guarding against a specific way inference can be quietly invalidated:
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Required columns present} --- a missing field (say the risk-free
+  rate) would otherwise be filled with defaults or \texttt{NaN} downstream.
+\item
+  \textbf{No null required values} --- a single \texttt{NaN} propagates
+  through a regression and can silently drop observations.
+\item
+  \textbf{No duplicate (portfolio, date) keys} --- duplicates double-count
+  months and corrupt standard errors, likelihoods and ranks.
+\item
+  \textbf{Balanced panel} --- every month must contain all 25 portfolios,
+  because the joint HAC covariance and the common-date bootstrap require a
+  rectangular time-by-portfolio array.
+\item
+  \textbf{No missing calendar month} --- a gap in the monthly sequence
+  would break the lag structure of the HAC estimator (\S\ref{prelim-hac}).
+\item
+  \textbf{Within-month factor agreement} --- the factor values are common
+  to all portfolios in a month, so any within-month disagreement signals a
+  bad join.
+\end{itemize}
+
+\begin{verbatim}
+REQUIRED = {"date", "portfolio", "return", "mkt_rf", "smb", "hml", "rf"}
+
+def validate_panel(df, expected_portfolios=25):
+    missing = REQUIRED - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing columns: {sorted(missing)}")
+    if df[list(REQUIRED)].isna().any().any():
+        raise ValueError("Null required values")
+    if df.duplicated(["portfolio", "date"]).any():
+        raise ValueError("Duplicate portfolio-month keys")
+
+    counts = df.groupby("date")["portfolio"].nunique()
+    if not counts.eq(expected_portfolios).all():
+        raise ValueError("Unbalanced panel")
+
+    dates = pd.PeriodIndex(sorted(df["date"].unique()), freq="M")
+    expected = pd.period_range(dates.min(), dates.max(), freq="M")
+    if not dates.equals(expected):
+        raise ValueError("Missing calendar month")
+
+    factor_spread = df.groupby("date")[["mkt_rf","smb","hml","rf"]].nunique()
+    if factor_spread.to_numpy().max() != 1:
+        raise ValueError("Factor values disagree within month")
+\end{verbatim}
+
+\textbf{A many-to-many join is not more data.} If the same
+portfolio-month appears more than once after a merge, standard errors,
+likelihoods and rankings can all become invalid. Always validate the
+analytical key immediately after joining.
+
+\hypertarget{provenance}{%
+\section{Provenance and the replication/reconciliation distinction}\label{provenance}}
+
+Reproducibility requires knowing exactly which bytes produced a result.
+For each input the pipeline records the source URL, the acquisition date
+if known, the sample end date, the file size, a SHA-256 content hash, the
+weighting block used, the units, and the parser version. A SHA-256 digest
+is a fixed-length fingerprint of the file's bytes: identical files share a
+digest, and any change almost certainly changes it, so a recorded hash
+lets a later reader confirm they hold the same file. Note that a sample
+\emph{ending} in November 2025 does not prove the file was
+\emph{downloaded} in November 2025 --- the coverage date and the
+acquisition vintage are different facts.
+
+\begin{verbatim}
+import hashlib
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+\end{verbatim}
+
+\textbf{Replication is not reconciliation.} Two different guarantees are
+often confused. \emph{Numerical replication} asks: given \emph{these}
+bytes, does an independent implementation reproduce the reported
+coefficients? Here it does, to a tolerance of $10^{-12}$ against
+\texttt{statsmodels} (Chapter~15). \emph{Source reconciliation} asks: are
+\emph{these} bytes the same as the official public source? That is a
+separate question, and it does not pass.
+
+\textbf{Paper-specific limitation.} The fixed local inputs and the current
+(May 2026) official snapshot from the Kenneth R.\ French Data Library
+differ over their overlapping period --- by up to $1.4167$ percentage
+points for portfolio returns and $0.34$ percentage points for the FF3/RF
+fields. Official historical revisions are a plausible but unproven cause.
+Because the local acquisition vintage is unverified, exact source equality
+cannot be asserted and is classified \textsc{not\_comparable} rather than
+\textsc{pass} --- a visible, non-blocking finding, not a silent one --- even
+though every within-pipeline integrity check above passes. The local
+inputs remain immutable and are identified by hash, so the analysis is
+fully reproducible even while its reconciliation to the live source
+remains open (Chapter~15).
+

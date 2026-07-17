@@ -1,0 +1,64 @@
+\hypertarget{persistence}{}
+\hypertarget{rolling-persistence-overlap-and-quintile-mobility}{%
+\chapter{Rolling persistence, overlap and quintile
+mobility}\label{rolling-persistence-overlap-and-quintile-mobility}}
+
+\hypertarget{the-overlap-illusion}{%
+\section{The overlap illusion}\label{the-overlap-illusion}}
+
+Two 120-month windows ending 12 months apart share 108 months, or 90\%
+of their data. High correlation between their rankings is therefore
+partly mechanical. A 120-month separation produces disjoint decades and
+is the structurally interpretable comparison.
+
+\[
+Overlap fraction = max(0, W - h) / W
+\]
+
+For W = 120 and horizon h = 12, the fraction is 0.90; for h = 120, it is
+zero.
+
+\hypertarget{persistence-metrics}{%
+\section{Persistence metrics}\label{persistence-metrics}}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Spearman rank correlation:} agreement in order, invariant to
+  monotone score transformations.
+\item
+  \textbf{Pearson score correlation:} linear agreement in estimated
+  posterior scores.
+\item
+  \textbf{Mean absolute rank change:} average number of positions moved.
+\item
+  \textbf{Transition matrix:} probability of moving from one quintile to
+  another.
+\item
+  \textbf{Jaccard overlap:} intersection divided by union for top/bottom
+  membership sets.
+\end{itemize}
+
+\[
+J(A,B) = |A \cap  B| / |A \cup  B|
+\]
+
+\hypertarget{correct-interpretation}{%
+\section{Correct interpretation}\label{correct-interpretation}}
+
+\begin{longtable}[]{@{}p{0.14\textwidth}p{0.22\textwidth}p{0.22\textwidth}p{0.30\textwidth}@{}}
+\toprule\noalign{}
+Horizon & Window overlap & Mean rank correlation & Interpretation \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+12 months & 90\% & 0.863 & Mostly an overlap diagnostic \\
+60 months & 50\% & 0.483 & Still contaminated by overlap \\
+120 months & 0\% & 0.156 & Weak structural persistence \\
+\end{longtable}
+
+The same-quintile probability at the disjoint 120-month horizon is about
+25\%, only modestly above the 20\% uniform-mobility benchmark. This
+warns against treating the point ordering as a stable hierarchy.
+

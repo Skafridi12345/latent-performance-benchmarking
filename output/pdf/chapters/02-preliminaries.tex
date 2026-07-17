@@ -1,0 +1,812 @@
+\hypertarget{preliminaries}{}
+\chapter{Preliminaries: mathematical and statistical foundations}\label{preliminaries}
+
+This chapter assembles, with derivations, every mathematical and
+statistical tool that the later chapters use to answer the research
+question of Chapter~\ref{the-research-question}. It was built the way the
+instructions of a good course demand: by first reading that question and
+its complete solution, then listing the technical machinery invoked, and
+finally deriving each item from first principles. Section~\ref{prelim-toolkit}
+gives that list and maps each topic to the chapter that applies it; the
+remaining sections are a self-contained reference. A reader who is fluent
+in graduate econometrics may skim and return here whenever a later
+chapter cites a result.
+
+Throughout, vectors are columns, a prime or $\top$ denotes transpose,
+$\mathbb{E}$, $\operatorname{Var}$ and $\operatorname{Cov}$ are the
+expectation, variance and covariance operators, $\phi$ and $\Phi$ are the
+standard normal density and cumulative distribution function, and
+$I_p$ is the $p\times p$ identity.
+
+\section{The technical toolkit: what is needed and where}\label{prelim-toolkit}
+
+The research question has three parts --- is there benchmark-relative
+performance, how uncertain is any ranking of it, and does a past ranking
+predict future benchmark-adjusted returns --- and its answer chains
+together the following tools. Each row is derived in the section shown and
+applied in the chapter shown.
+
+\begin{longtable}[]{@{}p{0.40\textwidth}p{0.15\textwidth}p{0.37\textwidth}@{}}
+\toprule\noalign{}
+Topic & Derived in & Applied in \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Quadratic forms, positive semidefiniteness, spectral theorem & \S\ref{prelim-linalg} & Joint HAC (Ch.~6), shrinkage (Ch.~8), conditioning \\
+Matrix inversion lemma and partitioned inverse & \S\ref{prelim-linalg} & Empirical-Bayes posterior (Ch.~8) \\
+Multivariate normal; marginal and conditional laws & \S\ref{prelim-mvn} & Empirical Bayes (Ch.~8), GRS (Ch.~7) \\
+Quadratic forms of normals; $\chi^2$ and $F$ & \S\ref{prelim-mvn} & Wald and GRS tests (Ch.~7) \\
+Ordinary least squares; projection; intercept influence & \S\ref{prelim-ols} & Factor alpha (Ch.~5), HAC (Ch.~6) \\
+Asymptotics: LLN, CLT, delta method & \S\ref{prelim-asymp} & All inference \\
+Long-run variance; Newey--West HAC & \S\ref{prelim-hac} & Joint alpha covariance (Ch.~6) \\
+Wald, GRS, likelihood ratio, boundary mixtures & \S\ref{prelim-tests} & Joint tests (Ch.~7), SFA (Ch.~14) \\
+FWER, FDR, Benjamini--Hochberg & \S\ref{prelim-fdr} & Multiplicity control (Ch.~7) \\
+Bayes, normal--normal, empirical Bayes, profile MLE & \S\ref{prelim-eb} & Shrinkage (Ch.~8) \\
+Bootstrap; block and circular block bootstrap & \S\ref{prelim-boot} & Rank uncertainty (Ch.~9) \\
+Spearman correlation; Fisher $z$ & \S\ref{prelim-rank} & Forward evaluation (Ch.~11) \\
+Rolling vs.\ expanding; Diebold--Mariano; Giacomini--White & \S\ref{prelim-forecast} & Forward and incremental tests (Ch.~11--12) \\
+Composed-error density; conditional mean; boundary LR & \S\ref{prelim-sfa} & Stochastic frontier (Ch.~14) \\
+Excess returns and factor models & \S\ref{prelim-ap} & Data and alpha (Ch.~4--5) \\
+Numerical linear algebra and optimisation & \S\ref{prelim-num} & Implementation (Ch.~16) \\
+\end{longtable}
+
+\section{Linear algebra}\label{prelim-linalg}
+
+\subsection{Quadratic forms and positive semidefiniteness}
+
+For a symmetric matrix $A\in\mathbb{R}^{p\times p}$ and a vector
+$x\in\mathbb{R}^{p}$, the scalar $Q(x)=x^{\top}Ax=\sum_{i,j}A_{ij}x_ix_j$
+is a \emph{quadratic form}. $A$ is \emph{positive semidefinite} (PSD),
+written $A\succeq 0$, if $x^{\top}Ax\ge 0$ for all $x$, and
+\emph{positive definite} (PD, $A\succ 0$) if the inequality is strict for
+$x\ne 0$. Every covariance matrix is PSD, because for
+$\Sigma=\operatorname{Var}(X)$ and any fixed $a$,
+\[
+a^{\top}\Sigma a=\operatorname{Var}(a^{\top}X)\ge 0 .
+\]
+This single fact recurs constantly: it is why a HAC covariance must be
+PSD to be trusted (Ch.~6), and why the variance of a portfolio combination
+of correlated alphas can be smaller than the sum of the individual
+variances when the covariance is negative.
+
+\subsection{The spectral theorem, condition number and flooring}
+
+Any symmetric $A$ admits the \emph{eigendecomposition}
+\[
+A=Q\Lambda Q^{\top},\qquad Q^{\top}Q=I_p,\qquad
+\Lambda=\operatorname{diag}(\lambda_1,\dots,\lambda_p),
+\]
+with orthonormal eigenvectors (columns of $Q$) and real eigenvalues
+$\lambda_i$. Then $x^{\top}Ax=\sum_i\lambda_i(q_i^{\top}x)^2$, so
+$A\succeq 0$ iff every $\lambda_i\ge 0$. Functions of $A$ act on the
+eigenvalues: $A^{-1}=Q\Lambda^{-1}Q^{\top}$ and
+$A^{1/2}=Q\Lambda^{1/2}Q^{\top}$ when the $\lambda_i$ are non-negative.
+The \emph{condition number} $\kappa(A)=\lambda_{\max}/\lambda_{\min}$
+measures how much relative error a linear solve can amplify; the joint HAC
+matrix of Chapter~6 has $\kappa\approx 139$, finite and usable.
+\emph{Eigenvalue flooring} replaces each $\lambda_i$ by
+$\max(\lambda_i,\varepsilon)$ for a small scale-relative $\varepsilon$,
+which projects a numerically-indefinite symmetric matrix onto the nearest
+PSD matrix in the spectral norm; the implementation floors only negligible
+negatives and reports how many, so a materially indefinite estimate raises
+rather than being silently repaired.
+
+\subsection{The matrix inversion lemma and the partitioned inverse}
+
+Two identities do the heavy lifting in the empirical-Bayes derivation. The
+\emph{Sherman--Morrison--Woodbury} identity is
+\begin{equation}\label{eq:woodbury}
+(A+UCV)^{-1}=A^{-1}-A^{-1}U\bigl(C^{-1}+VA^{-1}U\bigr)^{-1}VA^{-1},
+\end{equation}
+valid whenever the inverses exist. It is proved by multiplying the
+right-hand side by $A+UCV$ and simplifying to $I$. A consequence used
+repeatedly is that, for $V\succ 0$ and $\tau^2>0$,
+\begin{equation}\label{eq:eb-woodbury}
+\bigl(V^{-1}+\tau^{-2}I\bigr)^{-1}
+=\tau^2 I-\tau^4\bigl(V+\tau^2 I\bigr)^{-1},
+\end{equation}
+which is~\eqref{eq:woodbury} with $A=\tau^{-2}I$, $U=V=I$, $C=V^{-1}$ after
+rearrangement; it lets the posterior covariance be written either as a
+precision inverse or in the numerically convenient ``$V+\tau^2I$'' form.
+For a symmetric block matrix, the \emph{partitioned inverse} uses the
+Schur complement $S=A_{22}-A_{21}A_{11}^{-1}A_{12}$:
+\[
+\begin{pmatrix}A_{11}&A_{12}\\A_{21}&A_{22}\end{pmatrix}^{-1}
+=\begin{pmatrix}
+A_{11}^{-1}+A_{11}^{-1}A_{12}S^{-1}A_{21}A_{11}^{-1} & -A_{11}^{-1}A_{12}S^{-1}\\
+-S^{-1}A_{21}A_{11}^{-1} & S^{-1}
+\end{pmatrix}.
+\]
+This is the algebra behind the conditional normal in \S\ref{prelim-mvn}.
+
+\section{Random vectors and the multivariate normal}\label{prelim-mvn}
+
+\subsection{Expectation, covariance and affine maps}
+
+For a random vector $X$, $\mathbb{E}(X)$ is taken componentwise and
+$\operatorname{Cov}(X)=\mathbb{E}[(X-\mathbb{E}X)(X-\mathbb{E}X)^{\top}]$.
+The operators are linear under affine maps: if $Y=a+BX$ then
+\begin{equation}\label{eq:affine}
+\mathbb{E}(Y)=a+B\,\mathbb{E}(X),\qquad
+\operatorname{Cov}(Y)=B\operatorname{Cov}(X)B^{\top}.
+\end{equation}
+Both identities follow directly from linearity of expectation; the second
+is the reason a portfolio weight vector applied to correlated returns
+produces $w^{\top}\Sigma w$, and the reason the intercept-influence weights
+of \S\ref{prelim-ols} turn a residual covariance into an alpha covariance.
+
+\subsection{The multivariate normal density}
+
+$X\sim N(\mu,\Sigma)$ with $\Sigma\succ 0$ has density
+\[
+f(x)=(2\pi)^{-p/2}\lvert\Sigma\rvert^{-1/2}
+\exp\!\Bigl(-\tfrac12 (x-\mu)^{\top}\Sigma^{-1}(x-\mu)\Bigr).
+\]
+Affine images of normals are normal: by~\eqref{eq:affine},
+$a+BX\sim N(a+B\mu,\,B\Sigma B^{\top})$. In particular
+$\Sigma^{-1/2}(X-\mu)\sim N(0,I_p)$, the \emph{whitening} transform used
+below.
+
+\subsection{Marginal and conditional normals}
+
+Partition $X=(X_1,X_2)$ with mean $(\mu_1,\mu_2)$ and
+\[
+\Sigma=\begin{pmatrix}\Sigma_{11}&\Sigma_{12}\\\Sigma_{21}&\Sigma_{22}\end{pmatrix}.
+\]
+Marginals are read off directly: $X_1\sim N(\mu_1,\Sigma_{11})$. The
+conditional law is
+\begin{equation}\label{eq:condnormal}
+X_1\mid X_2=x_2\ \sim\ N\!\Bigl(\mu_1+\Sigma_{12}\Sigma_{22}^{-1}(x_2-\mu_2),\ \Sigma_{11}-\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}\Bigr).
+\end{equation}
+\emph{Derivation.} Write the joint density and collect the terms in $x_1$
+in the exponent. Using the partitioned inverse, the precision block acting
+on $x_1$ is $(\Sigma_{11}-\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21})^{-1}$,
+and completing the square in $x_1$ shows the conditional exponent is a
+quadratic in $x_1$ centred at
+$\mu_1+\Sigma_{12}\Sigma_{22}^{-1}(x_2-\mu_2)$ with that precision; the
+remaining terms depend only on $x_2$ and form the marginal, confirming the
+normalisation. The conditional mean is the linear regression of $X_1$ on
+$X_2$ and the conditional covariance is the Schur complement. This is
+exactly the shape of the Bayesian posterior in \S\ref{prelim-eb} and of
+the truncated-normal update in the frontier model of \S\ref{prelim-sfa}.
+
+\subsection{Quadratic forms of normals; $\chi^2$ and $F$}
+
+If $z\sim N(0,I_p)$ then $z^{\top}z=\sum_i z_i^2\sim\chi^2_p$ by
+definition of the chi-square law. Hence for $X\sim N(0,\Sigma)$ with
+$\Sigma\succ 0$, whitening gives
+\begin{equation}\label{eq:chisq}
+X^{\top}\Sigma^{-1}X=(\Sigma^{-1/2}X)^{\top}(\Sigma^{-1/2}X)\sim\chi^2_p .
+\end{equation}
+This is the engine of the Wald test (\S\ref{prelim-tests}): a standardised
+estimate that is asymptotically $N(0,\Sigma)$ under a null produces a
+chi-square quadratic form. If $U\sim\chi^2_{d_1}$ and $V\sim\chi^2_{d_2}$
+are independent, then $F=(U/d_1)/(V/d_2)\sim F(d_1,d_2)$; the GRS statistic
+is exactly such a ratio because it divides a quadratic form in the alphas
+by an independent quadratic form in the factor means.
+
+\section{The linear regression model and ordinary least squares}\label{prelim-ols}
+
+\subsection{Model and least-squares objective}
+
+Stack $T$ observations of a portfolio's excess return in $y\in\mathbb{R}^T$
+and place a constant and the $K$ factors in the design
+$X\in\mathbb{R}^{T\times(K+1)}$, so that with
+$\theta=(\alpha,\beta^{\top})^{\top}$,
+\[
+y=X\theta+\varepsilon .
+\]
+Ordinary least squares chooses $\theta$ to minimise the residual sum of
+squares $S(\theta)=(y-X\theta)^{\top}(y-X\theta)$.
+
+\subsection{Normal equations and the estimator}
+
+Expanding,
+$S(\theta)=y^{\top}y-2\theta^{\top}X^{\top}y+\theta^{\top}X^{\top}X\theta$.
+Differentiating and setting the gradient to zero,
+\[
+\frac{\partial S}{\partial\theta}=-2X^{\top}y+2X^{\top}X\theta=0
+\ \Longrightarrow\ X^{\top}X\hat\theta=X^{\top}y
+\ \Longrightarrow\ \hat\theta=(X^{\top}X)^{-1}X^{\top}y,
+\]
+the last step assuming $X$ has full column rank. The Hessian
+$\partial^2 S/\partial\theta\partial\theta^{\top}=2X^{\top}X\succeq 0$, so
+the stationary point is the global minimum.
+
+\subsection{Projection, residuals and the annihilator}
+
+The fitted values are $\hat y=X\hat\theta=Hy$ with the \emph{hat matrix}
+$H=X(X^{\top}X)^{-1}X^{\top}$, which is symmetric and idempotent
+($H^2=H$) --- the orthogonal projection onto the column space of $X$. The
+residuals are $e=(I-H)y=(I-H)\varepsilon$, and $I-H$ is the complementary
+projection, so residuals are orthogonal to the regressors, $X^{\top}e=0$.
+
+\subsection{The intercept as a linear combination: influence weights}
+
+Let $c=(1,0,\dots,0)^{\top}$ select the intercept. Then
+$\hat\alpha=c^{\top}\hat\theta=c^{\top}(X^{\top}X)^{-1}X^{\top}y$ is a fixed
+linear combination of the returns:
+\begin{equation}\label{eq:influence}
+\hat\alpha=\sum_{t=1}^{T}a_t\,y_t,\qquad
+a_t=c^{\top}(X^{\top}X)^{-1}x_t,
+\end{equation}
+where $x_t^{\top}$ is row $t$ of $X$. Because the model gives
+$y_t=\alpha+\beta^{\top}f_t+\varepsilon_t$ and the weights satisfy
+$\sum_t a_t=1$, $\sum_t a_t f_t=0$ (the intercept is orthogonal to the
+factors by construction), subtracting the truth yields the crucial
+identity
+\begin{equation}\label{eq:alpha-error}
+\hat\alpha-\alpha=\sum_{t=1}^{T}a_t\,\varepsilon_t .
+\end{equation}
+The estimation error in alpha is a weighted sum of residual shocks, with
+weights that depend only on the common factor design. Because every one of
+the 25 portfolios shares the same dates and factors, the same weights
+$a_t$ apply to all of them, so the same-month residual vector converts
+into a joint alpha error --- the observation that produces the full
+cross-portfolio covariance in \S\ref{prelim-hac} and Chapter~6.
+
+\subsection{Mean, variance and the sandwich form}
+
+$\hat\theta$ is unbiased, $\mathbb{E}(\hat\theta)=\theta$, and by
+\eqref{eq:affine}
+\begin{equation}\label{eq:sandwich}
+\operatorname{Var}(\hat\theta)=(X^{\top}X)^{-1}X^{\top}\Omega X(X^{\top}X)^{-1},
+\qquad \Omega=\operatorname{Var}(\varepsilon\mid X).
+\end{equation}
+Under the classical assumption $\Omega=\sigma^2 I$ this collapses to
+$\sigma^2(X^{\top}X)^{-1}$, and the Gauss--Markov theorem states that OLS is
+then the best (minimum-variance) linear unbiased estimator. When $\Omega$
+is unknown, heteroskedastic or autocorrelated --- as monthly return
+residuals are (Ch.~13) --- the ``bread'' $(X^{\top}X)^{-1}$ is kept but the
+``meat'' $X^{\top}\Omega X$ is estimated robustly, giving the HAC estimator
+of \S\ref{prelim-hac}.
+
+\section{Asymptotic inference}\label{prelim-asymp}
+
+\subsection{Laws of large numbers and the central limit theorem}
+
+For an ergodic stationary sequence with finite mean, the sample average
+converges in probability to the mean (LLN):
+$\bar u_T\xrightarrow{p}\mathbb{E}(u)$. If in addition the long-run
+variance $\Omega_\infty=\sum_{j=-\infty}^{\infty}\operatorname{Cov}(u_t,u_{t-j})$
+is finite, a central limit theorem holds,
+\begin{equation}\label{eq:clt}
+\sqrt{T}\,(\bar u_T-\mathbb{E}u)\xrightarrow{d}N(0,\Omega_\infty),
+\end{equation}
+where the variance is the \emph{long-run} variance, not the one-period
+variance, precisely because the terms are dependent. This is why forward
+evaluation and the Diebold--Mariano test use HAC standard errors on serially
+correlated window statistics (\S\ref{prelim-forecast}).
+
+\subsection{Consistency and asymptotic normality of OLS}
+
+Writing $\hat\theta-\theta=(X^{\top}X)^{-1}X^{\top}\varepsilon
+=(X^{\top}X/T)^{-1}(X^{\top}\varepsilon/T)$ and letting
+$Q=\operatorname*{plim}X^{\top}X/T$, the LLN gives $X^{\top}\varepsilon/T
+\xrightarrow{p}0$ so $\hat\theta\xrightarrow{p}\theta$, and the CLT applied
+to the score $X^{\top}\varepsilon/\sqrt T$ gives
+\[
+\sqrt T(\hat\theta-\theta)\xrightarrow{d}N\bigl(0,\ Q^{-1}\,S\,Q^{-1}\bigr),
+\qquad S=\text{long-run variance of }x_t\varepsilon_t .
+\]
+The sandwich \eqref{eq:sandwich} is the finite-sample analogue; $S$ is what
+Newey--West estimates.
+
+\subsection{Slutsky and the delta method}
+
+Slutsky's theorem lets consistent estimates of nuisance quantities be
+substituted without changing limiting distributions, which is what
+justifies plugging an estimated covariance into a Wald statistic. The
+\emph{delta method} propagates asymptotic normality through a smooth
+function $g$: if
+$\sqrt T(\hat\theta-\theta)\xrightarrow{d}N(0,\Sigma)$ then
+\begin{equation}\label{eq:delta}
+\sqrt T\bigl(g(\hat\theta)-g(\theta)\bigr)\xrightarrow{d}
+N\!\bigl(0,\ \nabla g(\theta)^{\top}\Sigma\,\nabla g(\theta)\bigr).
+\end{equation}
+The Fisher $z$-transform of a correlation (\S\ref{prelim-rank}) is a direct
+application.
+
+\section{Dependence-robust covariance estimation}\label{prelim-hac}
+
+\subsection{Autocovariance and the long-run variance}
+
+Let $g_t$ be a mean-zero stationary (vector) score with autocovariances
+$\Gamma_j=\mathbb{E}[g_t g_{t-j}^{\top}]$. The variance of the scaled sum
+$T^{-1/2}\sum_{t=1}^{T}g_t$ tends to the long-run variance
+\begin{equation}\label{eq:lrv}
+\Omega_\infty=\sum_{j=-\infty}^{\infty}\Gamma_j
+=\Gamma_0+\sum_{j=1}^{\infty}(\Gamma_j+\Gamma_j^{\top}),
+\end{equation}
+which is $2\pi$ times the spectral density of $g_t$ at frequency zero.
+Ignoring the cross terms (using only $\Gamma_0$) is the mistake that
+plain OLS standard errors make; when residuals are serially correlated the
+$\Gamma_j$ for $j\ge 1$ are non-zero and must be included.
+
+\subsection{The Newey--West / Bartlett estimator}
+
+A truncated, kernel-weighted sample analogue of \eqref{eq:lrv} is the
+Newey--West estimator with Bartlett weights,
+\begin{equation}\label{eq:nw}
+\hat\Omega=\hat\Gamma_0+\sum_{l=1}^{L}w_l\bigl(\hat\Gamma_l+\hat\Gamma_l^{\top}\bigr),
+\qquad w_l=1-\frac{l}{L+1},\qquad
+\hat\Gamma_l=\frac1T\sum_{t=l+1}^{T}g_t g_{t-l}^{\top}.
+\end{equation}
+The linearly-declining Bartlett weights are not cosmetic: they make
+$\hat\Omega$ positive semidefinite for any data. To see why, the weighted
+sum equals $T^{-1}\sum_{|l|\le L}(1-|l|/(L+1))\sum_t g_t g_{t-l}^{\top}$,
+which is a Fej\'er-kernel (triangular) average of the periodogram; the
+Fej\'er kernel is non-negative, so the resulting matrix is PSD. A sharp
+rectangular truncation lacks this property and can yield an indefinite
+estimate. The bandwidth $L$ trades bias against variance; a common
+data-driven choice is the automatic rule
+$L=\lfloor 4(T/100)^{2/9}\rfloor$, used for the forward statistics, while
+the monthly factor regressions use a fixed $L=12$.
+
+\subsection{From single-series HAC to the joint alpha covariance}
+
+Combine \eqref{eq:alpha-error} across the $N=25$ portfolios. Let $e_t$ be
+the same-month $N$-vector of residuals and let $a_t$ be the common scalar
+intercept weight from \eqref{eq:influence}. Define the alpha score vector
+$g_t=a_t e_t$. Then the stacked alpha error is
+$\hat\alpha-\alpha=\sum_t g_t$, and
+\[
+\operatorname{Var}(\hat\alpha-\alpha)=\sum_{t}\sum_{s}\mathbb{E}[g_t g_s^{\top}]
+=\Gamma_0+\sum_{l\ge 1}(\Gamma_l+\Gamma_l^{\top}),
+\]
+estimated by \eqref{eq:nw} with the finite-sample correction
+$T/(T-P)$, $P=K+1$:
+\begin{equation}\label{eq:jointhac}
+V_{\mathrm{HAC}}=\frac{T}{T-P}\Bigl\{\hat\Gamma_0+\sum_{l=1}^{L}w_l(\hat\Gamma_l+\hat\Gamma_l^{\top})\Bigr\},
+\qquad \hat\Gamma_l=\sum_{t=l+1}^{T}g_t g_{t-l}^{\top}.
+\end{equation}
+The off-diagonal entries retain contemporaneous and lagged
+cross-portfolio dependence; the diagonal reproduces the univariate HAC
+variance of each alpha, which is exactly the check performed against
+\texttt{statsmodels} in Chapter~6.
+
+\section{Hypothesis testing}\label{prelim-tests}
+
+\subsection{Anatomy of a test}
+
+A test fixes a null hypothesis $H_0$, a statistic whose distribution is
+known (at least asymptotically) under $H_0$, and a rejection region. The
+\emph{size} is the probability of rejecting a true null; the \emph{power}
+is the probability of rejecting a false one. A $p$-value is the
+probability, under $H_0$, of a statistic at least as extreme as the one
+observed; it is \emph{not} the probability that $H_0$ is true, and a small
+$p$-value is evidence against $H_0$ only within the stated model.
+
+\subsection{The Wald test}
+
+To test $H_0:R\theta=r$ for a $q\times(K{+}1)$ matrix $R$, form
+\[
+W=(R\hat\theta-r)^{\top}\bigl[R\hat V R^{\top}\bigr]^{-1}(R\hat\theta-r).
+\]
+Under $H_0$, $R\hat\theta-r$ is asymptotically $N(0,R V R^{\top})$, so by
+the whitening argument \eqref{eq:chisq}, $W\xrightarrow{d}\chi^2_q$. The
+joint test that all 25 alphas are zero is the special case
+$R\hat\theta=\hat\alpha$, $r=0$:
+\begin{equation}\label{eq:wald}
+W=\hat\alpha^{\top}V_{\mathrm{HAC}}^{-1}\hat\alpha\ \xrightarrow{d}\ \chi^2_{25}.
+\end{equation}
+It is the primary joint test precisely because $V_{\mathrm{HAC}}$ is
+dependence-robust: no IID or Gaussian assumption is required for the
+limiting chi-square.
+
+\subsection{The $F$ distribution and the GRS test}
+
+Under the stronger classical assumptions --- IID Gaussian residuals with a
+constant residual covariance $\Sigma_e$ and factor covariance $\Sigma_f$
+with mean $\bar f$ --- the Gibbons--Ross--Shanken statistic has an
+\emph{exact} finite-sample $F$ law,
+\begin{equation}\label{eq:grs}
+\mathrm{GRS}=\frac{T-N-K}{N}\cdot
+\frac{\hat\alpha^{\top}\hat\Sigma_e^{-1}\hat\alpha}{1+\bar f^{\top}\hat\Sigma_f^{-1}\bar f}
+\ \sim\ F(N,\ T-N-K)\quad\text{under }H_0 .
+\end{equation}
+It is a ratio of a quadratic form in the alphas to an independent
+quadratic form in the factor means, i.e.\ a scaled Hotelling $T^2$, which
+is why it is $F$-distributed. Because the diagnostics of Chapter~13 reject
+IID normality, GRS is reported only as a conventional benchmark and the
+HAC/Wald test is primary.
+
+\subsection{Likelihood ratio, Wilks and boundary mixtures}
+
+For nested models with an unrestricted maximum log-likelihood
+$\hat\ell_1$ and a restricted one $\hat\ell_0$, the likelihood-ratio
+statistic is $\mathrm{LR}=2(\hat\ell_1-\hat\ell_0)$. Wilks' theorem gives
+$\mathrm{LR}\xrightarrow{d}\chi^2_q$ under $H_0$ when the true parameter is
+interior to the parameter space. When a tested parameter lies on the
+\emph{boundary} --- as in the frontier test of $H_0:\sigma_u=0$ against
+$\sigma_u\ge 0$ (\S\ref{prelim-sfa}) --- the standard theory fails, because
+the estimator cannot move symmetrically around the null. Under regularity
+(Chernoff), the limiting law is the $50{:}50$ mixture
+\begin{equation}\label{eq:boundary}
+\mathrm{LR}\ \xrightarrow{d}\ \tfrac12\chi^2_0+\tfrac12\chi^2_1,
+\qquad p=\tfrac12\Pr(\chi^2_1\ge \mathrm{LR})\ \text{for }\mathrm{LR}>0,
+\end{equation}
+because with probability one-half the unconstrained estimate of the
+non-negative parameter would have been negative and is pinned at zero (the
+point mass $\chi^2_0$), and otherwise it behaves as an ordinary
+one-degree-of-freedom test.
+
+\section{Multiple testing and false-discovery control}\label{prelim-fdr}
+
+\subsection{Error rates}
+
+Testing $m$ hypotheses inflates the chance of at least one false
+rejection. The \emph{family-wise error rate}
+$\mathrm{FWER}=\Pr(V\ge 1)$, where $V$ is the number of true nulls
+rejected, is controlled conservatively by Bonferroni ($p_i\le\alpha/m$).
+The \emph{false-discovery rate} is the expected proportion of false
+rejections among all rejections,
+\[
+\mathrm{FDR}=\mathbb{E}\!\left[\frac{V}{\max(R,1)}\right],
+\]
+$R$ being the total number of rejections. FDR is the appropriate target
+when many tests are screened and a few false positives are tolerable, as
+with 25 portfolio alphas.
+
+\subsection{The Benjamini--Hochberg procedure}
+
+Order the $p$-values $p_{(1)}\le\cdots\le p_{(m)}$. Find the largest $k$
+with
+\[
+p_{(k)}\le \frac{k}{m}\,q,
+\]
+and reject the hypotheses with the $k$ smallest $p$-values. Under
+independence or positive dependence (PRDS) this controls the FDR at level
+$(m_0/m)q\le q$, where $m_0$ is the number of true nulls. Equivalently one
+reports monotone adjusted \emph{q-values}
+\begin{equation}\label{eq:bh}
+q_{(i)}=\min_{k\ge i}\ \min\!\Bigl(1,\ \frac{m\,p_{(k)}}{k}\Bigr),
+\end{equation}
+a reverse cumulative minimum that guarantees $q_{(1)}\le\cdots\le q_{(m)}$;
+rejecting when $q_i\le q$ reproduces the step-up rule. The study applies
+\eqref{eq:bh} in two separate families --- raw-alpha $p$-values and the 25
+frontier boundary $p$-values --- because they test different nulls.
+
+\section{Bayesian shrinkage and empirical Bayes}\label{prelim-eb}
+
+\subsection{Bayes' theorem and conjugacy}
+
+Bayes' theorem combines a likelihood and a prior into a posterior,
+$p(\theta\mid x)\propto p(x\mid\theta)\,p(\theta)$. A prior is
+\emph{conjugate} when the posterior stays in the same family; the normal
+likelihood with a normal prior is the canonical case and yields
+closed-form shrinkage.
+
+\subsection{The normal--normal posterior by completing the square}
+
+\emph{Scalar case.} Let $x\mid\theta\sim N(\theta,v)$ and
+$\theta\sim N(\mu,\tau^2)$. The log-posterior in $\theta$ is, up to
+constants,
+\[
+-\tfrac12\Bigl[\frac{(x-\theta)^2}{v}+\frac{(\theta-\mu)^2}{\tau^2}\Bigr]
+=-\tfrac12\Bigl[\theta^2\Bigl(\tfrac1v+\tfrac1{\tau^2}\Bigr)
+-2\theta\Bigl(\tfrac{x}{v}+\tfrac{\mu}{\tau^2}\Bigr)\Bigr]+\text{const}.
+\]
+Completing the square shows $\theta\mid x\sim N(m,s^2)$ with precision
+$s^{-2}=v^{-1}+\tau^{-2}$ and
+\begin{equation}\label{eq:scalar-post}
+m=\frac{v^{-1}x+\tau^{-2}\mu}{v^{-1}+\tau^{-2}}
+=\mu+\frac{\tau^2}{\tau^2+v}\,(x-\mu).
+\end{equation}
+The posterior mean is a precision-weighted average of data and prior; the
+\emph{shrinkage weight} $w=\tau^2/(\tau^2+v)$ is near one when the datum is
+precise ($v$ small) and near zero when it is noisy.
+
+\emph{Multivariate case.} With $\hat\alpha\mid\alpha\sim N(\alpha,V)$ and
+$\alpha\sim N(\mu\mathbf 1,\tau^2 I)$, the same completion of the square in
+the vector $\alpha$ gives posterior precision $P=V^{-1}+\tau^{-2}I$ and
+\begin{equation}\label{eq:mv-post}
+m=\mu\mathbf 1+\tau^2\bigl(V+\tau^2 I\bigr)^{-1}(\hat\alpha-\mu\mathbf 1),
+\qquad
+C=\tau^2 I-\tau^4\bigl(V+\tau^2 I\bigr)^{-1},
+\end{equation}
+where the second form of $C$ follows from the Woodbury identity
+\eqref{eq:eb-woodbury}. Because $V$ is not diagonal, the update is
+genuinely multivariate: one portfolio's posterior depends on uncertainty
+it shares with the others.
+
+\subsection{The winner's curse and James--Stein}
+
+Selecting the largest of $N$ noisy estimates biases it upward, because
+extreme observed values combine signal with favourable noise. Shrinkage
+corrects this: the James--Stein estimator, which shrinks the sample mean
+vector toward a common point, has uniformly smaller risk than the raw
+estimator in dimension $N\ge 3$. Empirical-Bayes shrinkage of the 25
+alphas is the applied form of this dominance and is why the posterior
+ranking is more trustworthy than the raw-alpha ranking.
+
+\subsection{Empirical Bayes: estimating $\mu$ and $\tau$}
+
+The prior parameters are not known; empirical Bayes estimates them from
+the same cross-section by maximising the \emph{marginal} likelihood.
+Integrating $\alpha$ out of the hierarchy gives
+\begin{equation}\label{eq:marg}
+\hat\alpha\sim N\bigl(\mu\mathbf 1,\ \Sigma_\tau\bigr),
+\qquad \Sigma_\tau=V+\tau^2 I .
+\end{equation}
+For fixed $\tau$, the marginal log-likelihood is quadratic in $\mu$ and its
+first-order condition is a generalised-least-squares mean,
+\begin{equation}\label{eq:mu-gls}
+\frac{\partial\ell}{\partial\mu}=\mathbf 1^{\top}\Sigma_\tau^{-1}(\hat\alpha-\mu\mathbf 1)=0
+\ \Longrightarrow\
+\hat\mu(\tau)=\frac{\mathbf 1^{\top}\Sigma_\tau^{-1}\hat\alpha}{\mathbf 1^{\top}\Sigma_\tau^{-1}\mathbf 1}.
+\end{equation}
+Substituting $\hat\mu(\tau)$ back gives a one-dimensional \emph{profile}
+log-likelihood in $\tau^2\ge 0$,
+\[
+\ell_p(\tau)=-\tfrac12\log\lvert\Sigma_\tau\rvert
+-\tfrac12(\hat\alpha-\hat\mu(\tau)\mathbf 1)^{\top}\Sigma_\tau^{-1}(\hat\alpha-\hat\mu(\tau)\mathbf 1),
+\]
+maximised by bounded one-dimensional optimisation (\S\ref{prelim-num}).
+The fitted values here are $\hat\mu\approx-26$ and
+$\hat\tau\approx 94$ annualised basis points. Reported posterior intervals
+add a first-order term for uncertainty in $\hat\mu$ but do not integrate
+over $\tau$, so they are model-based summaries, not exact guarantees.
+
+\section{Resampling and the bootstrap}\label{prelim-boot}
+
+\subsection{The plug-in principle}
+
+The bootstrap approximates the sampling distribution of a statistic
+$\hat\vartheta=s(\text{data})$ by resampling from an estimate of the
+data-generating process and recomputing $s$ many times. For independent
+data one resamples observations with replacement; the empirical
+distribution of the recomputed statistics approximates its true sampling
+distribution. Crucially, the \emph{whole} estimator is recomputed on each
+resample, so uncertainty in every stage is captured.
+
+\subsection{Block and circular block bootstraps}
+
+Monthly returns are dependent, so resampling single months would destroy
+serial and cross-sectional structure. The \emph{moving block bootstrap}
+resamples contiguous blocks of length $b$; concatenating $\lceil T/b\rceil$
+blocks preserves dependence within a block. The \emph{circular} variant
+wraps the index modulo $T$,
+\[
+\text{block starting at }s:\quad \bigl((s+h-1)\bmod T\bigr)+1,\quad h=0,\dots,b-1,
+\]
+so that every observation --- including those near the start and end of the
+sample --- is equally likely to appear, removing the edge bias of the
+non-circular version. Consistency requires $b\to\infty$ with $b/T\to 0$; a
+12-month block is used here. Applying the \emph{same} resampled date index
+to all 25 portfolios (a \emph{common-date} bootstrap) preserves
+contemporaneous cross-portfolio shocks.
+
+\subsection{Bootstrapping ranks and quantiles}
+
+A rank is a discontinuous function of the scores, so its uncertainty is
+not described by a standard error. The bootstrap sidesteps this: within
+each replicate $r$ the full pipeline --- regressions, joint HAC covariance,
+empirical-Bayes hyperparameters --- is refitted and the portfolios re-ranked
+to give $R_i^{(r)}$. The rank interval is the pair of empirical quantiles
+\[
+\bigl[\,Q_{0.025}\{R_i^{(r)}\},\ Q_{0.975}\{R_i^{(r)}\}\,\bigr],
+\]
+and the top-quintile probability is the fraction of replicates with
+$R_i^{(r)}\le 5$. These are resampling distributions, not Gaussian
+intervals, and can be asymmetric and bounded at ranks $1$ and $25$.
+
+\section{Rank statistics}\label{prelim-rank}
+
+\subsection{Spearman rank correlation}
+
+Spearman's $\rho$ is the Pearson correlation computed on the ranks of two
+variables; it measures monotone association and is invariant to any
+increasing transformation of either variable. In the forward evaluation it
+compares the cross-section of training scores with the cross-section of
+future alphas, so that only the \emph{ordering}, not the scale, is tested.
+
+\subsection{The Fisher $z$-transformation}
+
+A sample correlation near $\pm 1$ has a strongly skewed, bounded sampling
+distribution, so correlations are averaged on the \emph{Fisher} scale
+\[
+z=\operatorname{atanh}(\rho)=\tfrac12\log\frac{1+\rho}{1-\rho}.
+\]
+This is variance-stabilising. By the delta method \eqref{eq:delta} with
+$g(\rho)=\operatorname{atanh}(\rho)$, $g'(\rho)=1/(1-\rho^2)$, and the
+approximate correlation variance $\operatorname{Var}(\hat\rho)\approx
+(1-\rho^2)^2/n$,
+\[
+\operatorname{Var}(z)\approx g'(\rho)^2\operatorname{Var}(\hat\rho)\approx\frac{1}{n},
+\]
+free of $\rho$ to first order. Window correlations are therefore averaged
+as $z$, given HAC standard errors across windows, and mapped back with
+$\tanh$.
+
+\section{Out-of-sample forecast evaluation}\label{prelim-forecast}
+
+\subsection{Rolling vs.\ expanding estimation and look-ahead bias}
+
+A \emph{rolling} scheme estimates on a fixed-length trailing window
+$[t-w+1,t]$ and predicts the next $h$ months; an \emph{expanding} scheme
+uses all data $[1,t]$. \emph{Look-ahead bias} is any leakage of information
+dated after $t$ into the time-$t$ prediction --- a future return entering a
+score, rank, prior parameter or factor loading. The study freezes every
+such quantity at the training cutoff and evaluates only strictly later
+months, and asserts the non-overlap of evaluation windows so that annual
+statistics are not mechanically correlated through shared future data.
+
+\subsection{The Diebold--Mariano test}
+
+To compare two forecasts with losses $L(e_{1t})$ and $L(e_{2t})$, form the
+loss differential $d_t=L(e_{1t})-L(e_{2t})$ and test $H_0:\mathbb{E}(d_t)=0$
+(equal predictive accuracy) with
+\begin{equation}\label{eq:dm}
+\mathrm{DM}=\frac{\bar d}{\sqrt{\widehat{\operatorname{Var}}_{\mathrm{HAC}}(\bar d)}}
+\ \xrightarrow{d}\ N(0,1),
+\end{equation}
+where the HAC variance \eqref{eq:nw} is needed because $d_t$ is serially
+correlated. The incremental test of Chapter~12 is exactly this: $d_t$ is
+the per-window difference between the rolling ranking's predictive score
+(rank correlation, or quintile spread) and a benchmark ordering's, and the
+reported HAC $t$-statistic on $\bar d$ is a Diebold--Mariano statistic.
+
+\subsection{Giacomini--White conditional predictive ability}
+
+The classical Diebold--Mariano theory treats forecasts as given.
+Giacomini and White extend equal-accuracy testing to
+forecasts produced by models that are \emph{re-estimated} on a rolling
+window of fixed length, which is precisely the design here; their result
+justifies treating the rolling-versus-benchmark differential as a valid
+test of conditional predictive ability rather than merely of two fixed
+forecasts.
+
+\section{Composed-error (stochastic frontier) models}\label{prelim-sfa}
+
+\subsection{The composed error and its density}
+
+The half-normal stochastic-frontier model writes the residual as
+$\varepsilon=v-u$ with $v\sim N(0,\sigma_v^2)$ and a one-sided
+$u=\lvert w\rvert$, $w\sim N(0,\sigma_u^2)$, independent. Its density is the
+convolution
+\[
+f(\varepsilon)=\int_0^{\infty} f_v(\varepsilon+u)\,f_u(u)\,du
+=\frac{2}{\sigma}\,\phi\!\Bigl(\frac{\varepsilon}{\sigma}\Bigr)\,
+\Phi\!\Bigl(-\frac{\lambda\varepsilon}{\sigma}\Bigr),
+\qquad \sigma^2=\sigma_v^2+\sigma_u^2,\ \lambda=\frac{\sigma_u}{\sigma_v}.
+\]
+\emph{Derivation.} The integrand is
+$\propto\exp\{-\tfrac12[(\varepsilon+u)^2/\sigma_v^2+u^2/\sigma_u^2]\}$;
+completing the square in $u$ shows $u$ enters as a normal kernel with mean
+$\mu_*=-\varepsilon\sigma_u^2/\sigma^2$ and variance
+$\sigma_*^2=\sigma_v^2\sigma_u^2/\sigma^2$, and the leftover $\varepsilon$
+terms assemble into $\phi(\varepsilon/\sigma)$; integrating the normal
+kernel over $u\ge 0$ contributes the factor
+$\Phi(\mu_*/\sigma_*)=\Phi(-\lambda\varepsilon/\sigma)$, giving the stated
+density (the factor $2$ is the half-normal normalisation).
+
+\subsection{The conditional mean $\mathbb{E}[u\mid\varepsilon]$}
+
+From the completion above, $u\mid\varepsilon$ is normal with mean $\mu_*$
+and variance $\sigma_*^2$ \emph{truncated} to $[0,\infty)$. The mean of a
+normal $N(\mu_*,\sigma_*^2)$ truncated below at zero is the Jondrow et
+al.\ formula
+\begin{equation}\label{eq:jondrow}
+\mathbb{E}[u\mid\varepsilon]=\mu_*+\sigma_*\,
+\frac{\phi(\mu_*/\sigma_*)}{\Phi(\mu_*/\sigma_*)},
+\end{equation}
+the standard truncated-normal mean (a location plus the inverse Mills ratio
+scaled by $\sigma_*$). This is the portfolio-specific estimate of the
+one-sided shortfall used, cautiously, as a residual-asymmetry diagnostic.
+
+\subsection{The boundary likelihood-ratio test}
+
+Testing whether a distinct one-sided component exists is $H_0:\sigma_u=0$,
+a value on the boundary of the admissible set $\sigma_u\ge 0$. As in
+\eqref{eq:boundary}, the likelihood-ratio statistic against the Gaussian
+model has the $\tfrac12\chi^2_0+\tfrac12\chi^2_1$ limiting law, so the
+$p$-value is $\tfrac12\Pr(\chi^2_1\ge\mathrm{LR})$. Only one of the 25
+portfolios survives this test after false-discovery control, which is why
+the frontier apparatus remains a narrow diagnostic rather than a ranking.
+
+\section{Asset-pricing setup}\label{prelim-ap}
+
+\subsection{What ``Fama--French'' means}\label{prelim-ff}
+
+The names attached to the model and the data are those of the financial
+economists Eugene F.\ Fama (a Nobel laureate in economics, 2013) and
+Kenneth R.\ French, whose joint work defines the benchmark used throughout
+these notes. Understanding the term requires one step of background.
+
+\emph{The starting point: the CAPM.} The classical Capital Asset Pricing
+Model (Sharpe, Lintner) holds that a single systematic factor --- the
+excess return of the aggregate market --- prices all assets: an asset's
+expected excess return should be proportional to its market ``beta,''
+\[
+\mathbb{E}[y_{i}]=\beta_{i}\,\mathbb{E}[\text{Mkt}-\text{RF}],
+\]
+with intercept zero. Empirically this fails in a systematic way. Two
+groups of stocks earn persistently higher average returns than their
+market beta explains: \emph{small} firms (low market capitalisation) and
+\emph{value} firms (high book-to-market ratio). These are the ``size'' and
+``value'' anomalies.
+
+\emph{The three-factor model (FF3).} Fama and French (1993) proposed
+augmenting the market factor with two \emph{factor-mimicking portfolios}
+built precisely to capture those anomalies: SMB (``small minus big,'' long
+small firms and short large ones) and HML (``high minus low,'' long value
+and short growth). ``FF3'' abbreviates the resulting Fama--French
+three-factor model. It has been the standard empirical risk benchmark in
+finance for three decades, which is exactly why it is the benchmark here:
+alpha measured against FF3 is the conventional definition of return
+``unexplained'' by known systematic exposures.
+
+\emph{The five-factor extension (FF5).} Fama and French (2015) added two
+further factors --- RMW (``robust minus weak'' profitability) and CMA
+(``conservative minus aggressive'' investment) --- to capture patterns FF3
+still missed. ``FF5'' is that five-factor model. The study uses FF3 as its
+canonical benchmark and FF5 as a prespecified sensitivity check, precisely
+because alpha is benchmark-dependent (\S\ref{rq-difficulties}).
+
+\emph{The test assets and the data source.} The 25 portfolios analysed
+here are themselves a Fama--French construction: all NYSE/AMEX/NASDAQ
+stocks are sorted, at each formation date, into five size groups and five
+book-to-market groups, and the $5\times5=25$ intersections are held as
+value-weighted portfolios. Both the factor series and the 25 portfolios
+are published and maintained in the \emph{Kenneth R.\ French Data Library},
+the canonical public source from which the local inputs are drawn
+(Chapter~4). A subtle but important consequence follows: because SMB and
+HML are built \emph{from} sorts on size and book-to-market, and the 25 test
+assets are built from the \emph{same} sorts, regressing these portfolios on
+FF3 measures the model against its own raw material --- another reason a
+non-zero alpha is a pricing residual, not evidence of skill.
+
+\subsection{Excess returns and factor models}
+
+The one-period excess return is $y_{it}=r_{it}-r_{ft}$, the return above
+the risk-free rate. A linear factor model writes it as
+$y_{it}=\alpha_i+\beta_i^{\top}f_t+\varepsilon_{it}$, where $f_t$ collects
+traded factor returns. For the three-factor model
+$f_t=(\text{Mkt}-\text{RF},\,\text{SMB},\,\text{HML})_t^{\top}$: the market
+excess return, SMB (small minus big) and HML (high minus low
+book-to-market); the five-factor model appends RMW (profitability) and
+CMA (investment). Every component is itself an excess or long--short return,
+so the regression places dependent variable and regressors on a common
+basis.
+
+\subsection{Alpha as a model-relative residual}
+
+The intercept $\alpha_i$ is the average excess return the chosen factors
+leave unexplained. It is model-relative: a non-zero alpha signals mispricing
+\emph{relative to the specified factors}, and can arise from an omitted
+priced risk, a friction, a nonlinearity, or genuine abnormal performance.
+On passively sorted test assets it is a pricing residual, not evidence of
+skill --- the interpretive discipline that the whole course enforces.
+
+\section{Numerical methods}\label{prelim-num}
+
+\subsection{Solve, do not invert}
+
+Equations are written with matrix inverses for clarity, but a stable
+implementation solves linear systems instead. For a PD matrix the Cholesky
+factorisation $A=LL^{\top}$ ($L$ lower-triangular) reduces $Ax=b$ to two
+triangular solves, at lower cost and better accuracy than forming
+$A^{-1}$. The log-determinant needed for the marginal likelihood
+\eqref{eq:marg} is $\log\lvert A\rvert=2\sum_i\log L_{ii}$.
+
+\subsection{Conditioning and eigenvalue flooring}
+
+The relative error in a solve is bounded by roughly $\kappa(A)$ times the
+input error, so an ill-conditioned covariance loses precision. The pipeline
+symmetrises every estimated covariance, inspects its eigenvalues, floors
+only negligible negative eigenvalues by a scale-relative amount
+(\S\ref{prelim-linalg}), and raises if the matrix is materially indefinite,
+so numerical repair is auditable rather than silent.
+
+\subsection{Positivity and bounded optimisation}
+
+Scale parameters must stay positive, so they are estimated on the log
+scale, e.g.\ $\sigma=e^{\eta}$ with $\eta$ unconstrained, which turns a
+constrained problem into an unconstrained one and keeps the optimiser
+inside the feasible region. The one-dimensional profile in $\tau^2$
+\eqref{eq:mu-gls} is maximised by a bounded scalar routine (Brent's method)
+on $[0,\text{upper}]$, and the frontier likelihood uses a robust
+Newton/quasi-Newton step with the analytic score of Chapter~14.
+

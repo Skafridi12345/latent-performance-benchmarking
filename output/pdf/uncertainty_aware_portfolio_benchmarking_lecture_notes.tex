@@ -1,0 +1,142 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  11pt,
+  a4paper,
+]{report}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\ifPDFTeX\else
+  \setmainfont{DejaVu Serif}
+  \setsansfont{DejaVu Sans}
+  \setmonofont{DejaVu Sans Mono}
+  \setmathfont{Latin Modern Math}
+\fi
+\usepackage{fvextra}
+\RecustomVerbatimEnvironment{verbatim}{Verbatim}{breaklines=true,breakanywhere=true,fontsize=\small}
+\definecolor{LectureNavy}{HTML}{12395A}
+\definecolor{LectureTeal}{HTML}{167F7A}
+\definecolor{LectureGold}{HTML}{C28C2C}
+\usepackage[margin=25mm]{geometry}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\pdfstringdefDisableCommands{%
+  \def\ensuremath#1{#1}%
+  \def\times{x}%
+  \def\mu{mu}%
+  \def\tau{tau}%
+}
+\hypersetup{
+  pdftitle={From Returns to Defensible Portfolio Evidence},
+  pdfauthor={Professor-Level Teaching Edition for a BSc Mathematics Graduate},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={teal},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{From Returns to Defensible Portfolio Evidence}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{Graduate Lecture Notes in Uncertainty-Aware Portfolio
+Benchmarking}
+\author{Professor-Level Teaching Edition for a BSc Mathematics Graduate}
+\date{July 2026}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+\pagenumbering{roman}
+\maketitle
+
+{
+\hypersetup{linkcolor=}
+\setcounter{tocdepth}{2}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+\hypersetup{pageanchor=true}
+}
+\hypertarget{content}{}
+
+% ===================================================================
+% Chapters are split into separate files under chapters/ for editing.
+% ===================================================================
+\input{chapters/01-orientation}
+\input{chapters/02-preliminaries}
+\input{chapters/03-research-question}
+\input{chapters/04-data}
+\input{chapters/05-factor-regression}
+\input{chapters/06-joint-hac}
+\input{chapters/07-joint-testing}
+\input{chapters/08-empirical-bayes}
+\input{chapters/09-block-bootstrap}
+\input{chapters/10-persistence}
+\input{chapters/11-forward-validation}
+\input{chapters/12-incremental-test}
+\input{chapters/13-residual-diagnostics}
+\input{chapters/14-stochastic-frontier}
+\input{chapters/15-external-validation}
+\input{chapters/16-implementation}
+\input{chapters/17-reading-evidence}
+\input{chapters/18-capstone}
+\input{chapters/19-exercises}
+\input{chapters/20-glossary}
+\input{chapters/21-references}
+
+\end{document}

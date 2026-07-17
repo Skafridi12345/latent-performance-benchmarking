@@ -1,0 +1,89 @@
+\hypertarget{forward}{}
+\hypertarget{strictly-forward-validation}{%
+\chapter{Strictly forward
+validation}\label{strictly-forward-validation}}
+
+Design an evaluation where every model choice and estimate used for
+ranking is fixed before the future observations are touched.
+
+\hypertarget{timeline}{%
+\section{Timeline}\label{timeline}}
+
+120-month training data
+
+Fit betas, V, \ensuremath{\mu }, \ensuremath{\tau }
+
+Freeze scores and ranks
+
+Observe next 12 months
+
+Evaluate future alpha
+
+\[
+A^{+}_{i} = mean_{\mathrm{future\,t}}[ y_{\mathrm{it}} - \hat{\beta }{}^{\prime}_{i,train}f_{t} ]
+\]
+
+The beta is frozen. Re-estimating beta on the evaluation year would
+allow future data to redefine the target being evaluated.
+
+At cutoff c, let the training set be \{c\ensuremath{-}119,\ldots,c\} and the
+evaluation set be \{c+1,\ldots,c+12\}. The ranking function
+R\textsubscript{c} must be measurable with respect to information
+available at c. In probability notation, if \ensuremath{\mathcal{F}}\textsubscript{c} is the
+information set at the cutoff, then
+
+\[
+R_{c} \in  \mathcal{F}_{c}, while A^{+}_{c} \in  \mathcal{F}_{c+12} \setminus \mathcal{F}_{c}.
+\]
+
+This is the formal meaning of ``look-ahead free.'' Every estimated beta,
+covariance, hyperparameter, scaling rule, tie-breaking rule and
+portfolio assignment must be determined by \ensuremath{\mathcal{F}}\textsubscript{c}.
+
+\hypertarget{evaluation-statistics}{%
+\section{Evaluation statistics}\label{evaluation-statistics}}
+
+\begin{enumerate}
+\tightlist
+\item
+  Spearman correlation between training scores and future alpha across
+  the 25 portfolios.
+\item
+  Average future alpha of the training top quintile minus the average
+  future alpha of the training bottom quintile.
+\end{enumerate}
+
+For correlations, transform each annual Spearman value using z =
+atanh(\ensuremath{\rho }), aggregate z with HAC inference, then transform back with tanh.
+This prevents averaging correlations on an inappropriate raw scale.
+
+\[
+z_{w}=atanh(\rho _{w})=\frac{1}{2}log[(1+\rho _{w})/(1-\rho _{w})], \bar{\rho }=tanh(\bar{z}).
+\]
+
+If z\textsubscript{w} is serially dependent across evaluation windows,
+estimate the long-run variance of its mean with HAC. A 95\% interval on
+the z scale is \ensuremath{\bar{z}} \ensuremath{\pm } 1.96\ensuremath{\cdot }SE\textsubscript{HAC}(\ensuremath{\bar{z}}), with both endpoints
+mapped back through tanh.
+
+\hypertarget{leakage-assertions}{%
+\section{Leakage assertions}\label{leakage-assertions}}
+
+\begin{verbatim}
+assert train_dates.max() < eval_dates.min()
+assert len(set(train_dates) & set(eval_dates)) == 0
+assert beta_timestamp < eval_dates.min()
+assert rank_timestamp < eval_dates.min()
+assert hyperparameter_timestamp < eval_dates.min()
+assert preprocessing_fit_timestamp < eval_dates.min()
+\end{verbatim}
+
+\textbf{Paper result.} Across 89 non-overlapping evaluation years, mean
+rank correlation is 0.102 with HAC 95\% interval {[}0.055, 0.149{]}. The
+top-minus-bottom quintile spread averages 243 bps/year, but its IQR of
+498 bps exceeds its mean and negative years remain frequent.
+
+\textbf{A positive average is not a timing rule.} Forward validation
+shows association using past information. It does not yet prove that
+annual re-estimation adds value over a simpler stable ranking.
+

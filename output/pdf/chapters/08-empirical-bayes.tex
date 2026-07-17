@@ -1,0 +1,162 @@
+\hypertarget{bayes}{}
+\hypertarget{multivariate-empirical-bayes-and-partial-pooling}{%
+\chapter{Multivariate empirical Bayes and partial
+pooling}\label{multivariate-empirical-bayes-and-partial-pooling}}
+
+\hypertarget{the-winners-curse}{%
+\section{The winner\textquotesingle s curse}\label{the-winners-curse}}
+
+When the largest estimate is selected from 25 noisy estimates, it is
+likely to be unusually high partly because of noise. Partial pooling
+shrinks estimates toward a cross-sectional centre, with the amount of
+shrinkage determined by sampling uncertainty and the estimated
+dispersion of true alphas.
+
+\[
+\hat{\alpha } | \alpha  \sim N(\alpha , \hat{V}_{\mathrm{HAC}}), \alpha  \sim N(\mu 1, \tau ^{2}I)
+\]
+
+\[
+E(\alpha  | data) = \mu 1 + \tau ^{2}(\hat{V}_{\mathrm{HAC}} + \tau ^{2}I)^{-1}(\hat{\alpha } - \mu 1)
+\]
+
+\[
+Var(\alpha  | data) = \tau ^{2}I - \tau ^{4}(\hat{V}_{\mathrm{HAC}} + \tau ^{2}I)^{-1}
+\]
+
+With a diagonal V, each portfolio shrinks independently. With the full
+V, a portfolio\textquotesingle s posterior update also reflects how its
+alpha-estimation error co-moves with the others.
+
+\hypertarget{deriving-the-posterior-by-completing-the-square}{%
+\section{Deriving the posterior by completing the
+square}\label{deriving-the-posterior-by-completing-the-square}}
+
+Write a = \ensuremath{\hat{\alpha }} and let 1 denote the N-vector of ones. Ignoring constants
+that do not depend on \ensuremath{\alpha }, Bayes\textquotesingle{} rule gives:
+
+\[
+log p(\alpha |a) = -\frac{1}{2}(a-\alpha ){}^{\prime}V^{-1}(a-\alpha ) - \frac{1}{2}(\alpha -\mu 1){}^{\prime}(\tau ^{-2}I)(\alpha -\mu 1) + C.
+\]
+
+Collect the quadratic and linear terms in \ensuremath{\alpha }:
+
+\[
+log p(\alpha |a) = -\frac{1}{2} \alpha {}^{\prime}P\alpha  + \alpha {}^{\prime}b + C{}^{\prime}, P = V^{-1}+\tau ^{-2}I, b=V^{-1}a+\tau ^{-2}\mu 1.
+\]
+
+Complete the square with C\textsubscript{post}=P\textsuperscript{\ensuremath{-}1} and
+m\textsubscript{post}=C\textsubscript{post}b:
+
+\[
+-\frac{1}{2}\alpha {}^{\prime}P\alpha +\alpha {}^{\prime}b = -\frac{1}{2}(\alpha -m_{\mathrm{post}}){}^{\prime}P(\alpha -m_{\mathrm{post}}) + \frac{1}{2}m_{\mathrm{post}}{}^{\prime}Pm_{\mathrm{post}}.
+\]
+
+Therefore \ensuremath{\alpha }\textbar a is multivariate normal. Matrix identities turn the
+precision-form solution into the update form shown above:
+
+\[
+m_{\mathrm{post}}=\mu 1+\tau ^{2}(V+\tau ^{2}I)^{-1}(a-\mu 1),
+\]
+
+\[
+C_{\mathrm{post}}=(V^{-1}+\tau ^{-2}I)^{-1}=\tau ^{2}I-\tau ^{4}(V+\tau ^{2}I)^{-1}.
+\]
+
+If V is diagonal with entry s\textsubscript{i}\textsuperscript{2}, the formula reduces to
+the familiar scalar weighted average:
+
+\[
+E(\alpha _{i}|a_{i}) = w_{i}a_{i} + (1-w_{i})\mu , w_{i}=\tau ^{2}/(\tau ^{2}+s_{i}^{2}).
+\]
+
+For example, with \ensuremath{\mu } = \ensuremath{-}26 bps/year, \ensuremath{\tau } = 94 bps/year, a\textsubscript{i}
+= 250 bps/year and s\textsubscript{i} = 150 bps/year,
+
+\[
+w_{i}=94^{2}/(94^{2}+150^{2})=0.282, \quad \text{posterior mean}= 0.282(250)+0.718(-26)=51.8\ \mathrm{bps/year}.
+\]
+
+The estimate shrinks sharply because its sampling uncertainty exceeds
+the cross-sectional prior dispersion. In the actual multivariate
+calculation there is no independent scalar weight for each portfolio:
+off-diagonal elements of V couple all updates.
+
+\hypertarget{estimating-ux3bc-and-ux3c4-by-marginal-likelihood}{%
+\section{Estimating \ensuremath{\mu } and \ensuremath{\tau } by marginal
+likelihood}\label{estimating-ux3bc-and-ux3c4-by-marginal-likelihood}}
+
+The marginal model is \ensuremath{\hat{\alpha }} \textasciitilde{} N(\ensuremath{\mu }1, V + \ensuremath{\tau }\textsuperscript{2}I). Profile
+marginal maximum likelihood searches over \ensuremath{\tau } \ensuremath{\geq } 0, solves for \ensuremath{\mu }
+conditional on \ensuremath{\tau }, and selects the pair that maximises the marginal
+likelihood.
+
+Let S(\ensuremath{\tau })=V+\ensuremath{\tau }\textsuperscript{2}I. The marginal log-likelihood is
+
+\[
+\ell (\mu ,\tau )=-\frac{1}{2}[N log(2\pi )+log|S(\tau )|+(a-\mu 1){}^{\prime}S(\tau )^{-1}(a-\mu 1)].
+\]
+
+Differentiating with respect to \ensuremath{\mu } gives
+
+\[
+\partial \ell /\partial \mu  = 1{}^{\prime}S^{-1}(a-\mu 1).
+\]
+
+Setting this to zero yields the generalised least-squares profile
+estimate:
+
+\[
+\hat{\mu }(\tau ) = [1{}^{\prime}S(\tau )^{-1}a]/[1{}^{\prime}S(\tau )^{-1}1].
+\]
+
+Substitute \ensuremath{\hat{\mu }}(\ensuremath{\tau }) back into \ensuremath{\ell } and optimise the resulting one-dimensional
+function over \ensuremath{\tau } \ensuremath{\geq } 0. Optimising log \ensuremath{\tau } enforces positivity, but the \ensuremath{\tau } = 0
+boundary must be evaluated explicitly rather than excluded by the
+transformation.
+
+\begin{verbatim}
+def profiled_mu(alpha_hat, V, tau2):
+    S = V + tau2 * np.eye(len(alpha_hat))
+    one = np.ones(len(alpha_hat))
+    Sinv_one = np.linalg.solve(S, one)
+    return (Sinv_one @ alpha_hat) / (Sinv_one @ one)
+
+def neg_profile_loglik(log_tau, alpha_hat, V):
+    tau2 = np.exp(2 * log_tau)
+    S = V + tau2 * np.eye(len(alpha_hat))
+    mu = profiled_mu(alpha_hat, V, tau2)
+    d = alpha_hat - mu
+    sign, logdet = np.linalg.slogdet(S)
+    if sign <= 0:
+        return np.inf
+    return 0.5 * (logdet + d @ np.linalg.solve(S, d))
+\end{verbatim}
+
+\hypertarget{raw-tests-and-posterior-intervals-answer-different-questions}{%
+\section{Raw tests and posterior intervals answer different
+questions}\label{raw-tests-and-posterior-intervals-answer-different-questions}}
+
+\begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
+\toprule\noalign{}
+Object & Question & Uses \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Raw alpha p/q & Is the unpooled regression intercept distinguishable
+from zero? & Testing and discovery control \\
+Posterior mean & What is the partially pooled estimate under the
+hierarchical model? & Uncertainty-aware scoring \\
+Posterior interval & What range is plausible under the fitted
+hierarchical model? & Magnitude uncertainty \\
+Bootstrap rank interval & Where might the portfolio rank under
+historical resampling? & Ranking uncertainty \\
+\end{longtable}
+
+\textbf{Paper result.} The fitted prior centre is \ensuremath{-}26 annualised bps and
+prior dispersion is 94 bps. Partial pooling changes at least one
+portfolio by ten rank positions. Posterior intervals remain approximate
+because \ensuremath{\tau } uncertainty is not fully integrated and V is treated as known
+during the conditional posterior calculation.
+

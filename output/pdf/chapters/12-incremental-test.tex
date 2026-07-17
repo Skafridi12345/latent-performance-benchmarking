@@ -1,0 +1,106 @@
+\hypertarget{incremental}{}
+\hypertarget{the-incremental-test-dynamic-forecast-or-stable-ordering}{%
+\chapter{The incremental test: dynamic forecast or stable
+ordering?}\label{the-incremental-test-dynamic-forecast-or-stable-ordering}}
+
+\hypertarget{the-identification-problem}{%
+\section{The identification problem}\label{the-identification-problem}}
+
+Suppose FF3 persistently underprices a fixed set of characteristic
+cells. Past alpha will then predict future alpha even if annual
+re-estimation contains no useful time variation. The forward level test
+cannot distinguish this from dynamic ranking skill.
+
+\hypertarget{comparator-rankings}{%
+\section{Comparator rankings}\label{comparator-rankings}}
+
+\begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
+\toprule\noalign{}
+Comparator & Uses future data? & Purpose \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Size-ascending / B/M-descending gradient & No & Naive characteristic
+ordering \\
+Diagonal value-minus-size gradient & No & Alternative simple
+characteristic ordering \\
+Expanding-window ranking & No & Fair strong comparator using all data
+available at each cutoff \\
+Full-sample alpha oracle & \textbf{Yes} & Look-ahead upper bound, never
+a tradable strategy \\
+\end{longtable}
+
+\hypertarget{increment-definition}{%
+\section{Increment definition}\label{increment-definition}}
+
+\[
+\Delta _{w} = performance_{w}(rolling rank) - performance_{w}(benchmark rank)
+\]
+
+Aggregate the per-window increments using a one-sided HAC t-test for
+E(\ensuremath{\Delta }) \textgreater{} 0 and a block bootstrap. The fair verdict rests on
+the expanding-window comparator, because both rankings use only
+information available at the cutoff.
+
+\hypertarget{a-numerical-example-that-separates-level-from-increment}{%
+\section{A numerical example that separates level from
+increment}\label{a-numerical-example-that-separates-level-from-increment}}
+
+Suppose four evaluation years produce rolling-rank correlations (0.12,
+0.08, 0.16, 0.04) and expanding-rank correlations (0.15, 0.11, 0.18,
+0.07). Both methods predict positively:
+
+\[
+mean(\rho _{\mathrm{rolling}})=0.10, mean(\rho _{\mathrm{expanding}})=0.1275.
+\]
+
+But the paired increments are (\ensuremath{-}0.03,\ensuremath{-}0.03,\ensuremath{-}0.02,\ensuremath{-}0.03), with mean
+\ensuremath{-}0.0275. Thus a positive forward level is perfectly compatible with a
+negative incremental contribution from rolling re-estimation. The shared
+fixed cross-sectional signal explains the positive level; discarding
+older observations adds estimation noise.
+
+\hypertarget{interpretation-of-the-reported-evidence}{%
+\section{Interpretation of the reported
+evidence}\label{interpretation-of-the-reported-evidence}}
+
+\begin{itemize}
+\tightlist
+\item
+  The rolling rank beats the two naive characteristic gradients.
+\item
+  It does not beat the expanding-window rank: mean correlation increment
+  \ensuremath{-}0.042, one-sided p = 0.97. For the prespecified alternative
+  E(\ensuremath{\Delta })\textgreater0, such a large p-value means the estimate lies in the
+  wrong direction; it is not evidence that the two procedures are
+  equivalent.
+\item
+  It is dominated by the full-sample oracle, as expected for an upper
+  bound with look-ahead.
+\end{itemize}
+
+\textbf{Central conclusion.} The out-of-sample relation is consistent
+with a stable, irregular cross-sectional pattern of benchmark-relative
+residual returns. Calling this ``mispricing'' would require additional
+economic identification. Discarding older data and re-estimating from a
+120-month rolling window adds noise rather than dynamic forecasting
+information.
+
+\hypertarget{minimal-implementation-pattern}{%
+\section{Minimal implementation
+pattern}\label{minimal-implementation-pattern}}
+
+\begin{verbatim}
+for cutoff in cutoffs:
+    future = future_alpha(cutoff, horizon=12, frozen_betas=True)
+    rolling = rank_from_last_120_months(cutoff)
+    expanding = rank_from_all_history_to(cutoff)
+
+    rho_roll = spearmanr(rolling, future).statistic
+    rho_expand = spearmanr(expanding, future).statistic
+    increments.append(rho_roll - rho_expand)
+
+estimate, se, p_one_sided = hac_mean_test(increments, alternative="greater")
+\end{verbatim}
+
