@@ -1,14 +1,14 @@
 cff-version: 1.2.0
 message: "If you use this repository, please cite it as below."
-title: "Latent Performance Benchmarking"
+title: "Uncertainty-Aware Risk-Adjusted Portfolio Benchmarking"
 authors:
   - family-names: "Shoaib"
     given-names: "Muhammad"
-version: "0.4.0"
+version: "0.5.0"
 date-released: "2026-07-16"
 license: "MIT"
 repository-code: "https://github.com/drmshoaib/latent-performance-benchmarking"
-abstract: "Risk-adjusted portfolio benchmarking with HAC inference, hierarchical shrinkage, rank uncertainty, and forward validation."
+abstract: "Uncertainty-aware risk-adjusted portfolio benchmarking with full joint HAC inference, multivariate empirical-Bayes shrinkage, rank uncertainty, and forward validation."
 keywords:
   - "quantitative finance"
   - "portfolio benchmarking"

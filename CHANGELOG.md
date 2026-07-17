@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-07-16
+
+### Fixed
+
+- Applied BH false-discovery control jointly across all 25 SFA boundary tests;
+  only FDR-supported fits can receive an SFA rank.
+- Replaced diagonal cross-sectional shrinkage with a full joint-HAC covariance
+  and multivariate empirical-Bayes posterior.
+- Made forward-spread labels explicit and added leakage, decade,
+  leave-one-decade-out, and extreme-window diagnostics.
+- Reframed window sensitivity as cross-window estimator agreement and centered
+  transitions on the 0.20 uniform-mixing baseline.
+
+### Added
+
+- Dependence-robust HAC/Wald and conventional GRS joint-alpha tests.
+- A 5,000-draw bootstrap with saved 1,000-versus-final stability diagnostics.
+- Pinned official May 2026 FF3, FF5, and 25-portfolio snapshots with hashes,
+  source metadata, and exact current-snapshot comparisons.
+- Independent statsmodels OLS/HAC replication, qualitative 5x5 checks,
+  July 1963-December 1991 historical validation, and FF5 sensitivity.
+- Audit-level methodology and data-dictionary documentation.
+
+### Removed
+
+- Legacy root entry points, compatibility run wrappers, and the superseded
+  root-level PDF alias. The canonical pipeline is `python -m analysis.run_all`.
+
 ## [0.4.0] - 2026-07-16
 
 ### Fixed

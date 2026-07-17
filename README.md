@@ -1,123 +1,94 @@
-# Latent Performance Benchmarking
+# Uncertainty-Aware Risk-Adjusted Portfolio Benchmarking
 
-This project benchmarks the 25 Fama-French size and book-to-market portfolios
-using factor-adjusted returns, dependence-robust inference, cross-sectional
-shrinkage, rank uncertainty, and strictly forward validation.
+This project benchmarks the 25 Fama-French size/book-to-market portfolios using
+factor-adjusted returns, full cross-portfolio HAC inference, multivariate
+empirical-Bayes shrinkage, bootstrap rank uncertainty, and strictly forward
+validation.
 
 The primary estimand is posterior factor alpha. Stochastic frontier analysis
-(SFA) is retained only as a secondary residual-asymmetry diagnostic. It is not
-used as the main performance ranking because a portfolio intercept and a
-persistent non-negative shortfall are not separately identified without extra
-structure.
+(SFA) is retained only as a secondary residual-asymmetry diagnostic because a
+free intercept and a persistent non-negative shortfall are not separately
+identified without additional structure.
 
-The July 2026 rebuild also fixes a historical many-to-many merge that had
-expanded 29,825 valid portfolio-months to 243,950 rows. All affected outputs and
-the superseded report have been removed and must not be cited.
+## Current findings
 
-## Headline findings
-
-The validated sample contains 25 portfolios and 1,193 monthly observations per
-portfolio from July 1926 through November 2025.
-
-- The empirical-Bayes prior mean is -47 annualised basis points (bps), with an
-  estimated cross-sectional standard deviation of 129 bps.
-- `SMALL HiBM` ranks first at +117 posterior bps/year, but its 95% posterior
-  interval includes zero. `BIG LoBM`, ranked second at +101 bps/year, is the
-  only portfolio whose posterior interval is wholly above zero.
-- Five raw factor-alpha tests remain significant at a 5% Benjamini-Hochberg
-  false-discovery rate, but bootstrap rank intervals remain wide. A point rank
-  should therefore not be read as a precise league table.
-- Rank persistence is mechanically high when estimation windows overlap. Mean
-  Spearman persistence falls from 0.88 at a 12-month horizon with 90% overlap
-  to 0.13 at a non-overlapping 120-month horizon.
-- In 89 strictly forward 12-month validation windows, the Fisher-averaged rank
-  correlation is 0.096 (HAC 95% CI 0.041 to 0.151). The top-minus-bottom future
-  factor-alpha spread averages 172 bps/year (HAC 95% CI 63 to 280).
-- Only 2 of 25 portfolios reject the no-one-sided-component boundary null at
-  5%. SFA rankings are therefore suppressed for the other 23 portfolios.
-- Factor residuals reject Gaussian normality for all 25 portfolios; 16 show
-  significant lag-12 serial dependence and all 25 show ARCH effects. HAC and
-  block-bootstrap uncertainty are essential, but do not solve model
-  misspecification.
+- The immutable local sample has 25 portfolios and 1,193 months from July 1926
+  through November 2025, with no duplicate keys or missing calendar months.
+- The fitted joint prior has mean -26 bps/year and cross-sectional standard
+  deviation 94 bps/year. The full HAC covariance condition number is 139.4 and
+  requires no eigenvalue flooring.
+- `SMALL HiBM` ranks first at 132 posterior bps/year. Two posterior intervals
+  are wholly positive—`SMALL HiBM` and `BIG LoBM`—while bootstrap rank
+  intervals remain broad.
+- Five raw alpha tests survive 5% BH FDR. The primary dependence-robust joint
+  HAC/Wald test rejects zero alpha across all portfolios (p = 6.42e-10).
+- Across 89 forward windows, the Fisher-averaged rank correlation is 0.102
+  (HAC 95% CI 0.055 to 0.149; p = 2.32e-05). Average top-quintile minus average
+  bottom-quintile future alpha is 243 bps/year (HAC 95% CI 153 to 333;
+  p = 1.30e-07); the median is 209.
+- Two SFA boundary tests are nominally significant, but only `ME5 BM4` survives
+  BH correction across all 25 tests. Only that case receives an SFA rank.
+- The 1,000-versus-5,000 bootstrap comparison changes rank interval endpoints
+  by at most one rank, but alpha tail endpoints by as much as about 27
+  annualized bps. The final outputs therefore use 5,000 draws.
 
 These are historical research diagnostics, not trading returns or investment
 advice.
 
-## Method
+## Statistical model
 
-For portfolio `i` and month `t`, the primary model is
-
-```text
-r_it - r_ft = alpha_i + beta_i' f_t + epsilon_it,
-```
-
-where `f_t` contains the market excess return, SMB, and HML factors. Coefficient
-uncertainty uses a 12-lag Bartlett-kernel Newey-West covariance estimator.
-Raw alpha p-values are adjusted across the 25 portfolios with the
-Benjamini-Hochberg procedure.
-
-Noisy cross-sectional alpha estimates are partially pooled through
+For portfolio `i` and month `t`:
 
 ```text
-alpha_hat_i | alpha_i ~ Normal(alpha_i, se_i^2)
-alpha_i               ~ Normal(mu, tau^2).
+r_it - r_ft = alpha_i + beta_i' f_t + epsilon_it.
 ```
 
-`mu` and `tau` are estimated by profile marginal maximum likelihood. The
-posterior mean is
+Common-date OLS score vectors produce the full cross-portfolio Bartlett HAC
+covariance `V`. The hierarchy is
 
 ```text
-E[alpha_i | data] = w_i alpha_hat_i + (1 - w_i) mu,
-w_i = tau^2 / (tau^2 + se_i^2).
+alpha_hat | alpha ~ Normal(alpha, V)
+alpha             ~ Normal(mu * 1, tau^2 I)
 ```
 
-This resolves the earlier identification problem: persistent performance is
-represented by one estimand, alpha, rather than being split arbitrarily between
-an intercept and a non-negative latent term.
+and the posterior mean is
 
-Rank uncertainty is estimated with a common-date circular block bootstrap. The
-same sampled months are used for every portfolio, preserving cross-sectional
-dependence. Rolling estimates use 120-month training windows ending every 12
-months. Persistence and transition outputs explicitly report the fraction of
-overlap, and only the 120-month horizon is labelled eligible for structural
-interpretation.
+```text
+mu * 1 + tau^2 (V + tau^2 I)^-1 (alpha_hat - mu * 1).
+```
 
-Forward validation freezes each training window's factor loadings and ranking,
-then evaluates factor-adjusted returns in the next 12 months. Future returns do
-not enter the score, prior, beta estimates, or rank.
+`mu` and `tau` are estimated jointly by profile marginal maximum likelihood.
+The covariance and shrinkage matrices are persisted as auditable outputs.
 
-### Secondary SFA diagnostic
+The conventional GRS test is reported as a secondary IID-normal benchmark. The
+primary joint test is a chi-square HAC/Wald test using the full alpha covariance.
+Raw portfolio alpha and SFA boundary p-values are adjusted in their respective
+25-test families with Benjamini-Hochberg.
 
-The half-normal diagnostic models factor residuals as `epsilon = v - u`, with
-Gaussian noise `v` and non-negative `u`. Its conditional score uses
-`E[exp(-u / sigma) | epsilon]`, where `sigma` is the fitted total residual scale;
-this makes the diagnostic invariant to expressing returns in decimals or
-percent. A one-sided likelihood-ratio boundary test is applied against the
-Gaussian model. Unsupported fits report the null model and receive no SFA rank.
-A truncated-normal specification is retained only as a distributional
-sensitivity check.
+## Validation
 
-## Data and validation
+The canonical local inputs remain immutable. Separately pinned May 2026
+official snapshots from the
+[Kenneth R. French Data Library](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html)
+are used for exact-overlap and metadata checks; the
+[25-portfolio documentation](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library/tw_5_ports.html)
+confirms the value-weighted monthly block.
 
-The local inputs originate from the
-[Kenneth R. French Data Library](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html).
-Portfolio construction is documented on the official
-[25 size/book-to-market portfolio page](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library/tw_5_ports.html).
-Full provenance and reviewed hashes are in [`data/SOURCES.md`](data/SOURCES.md).
+The fixed local inputs have a sample ending November 2025; exact acquisition
+vintage is unverified. The current official snapshot differs over the overlap:
+maximum differences are 1.4167 percentage points for portfolio returns and
+0.340 percentage points for FF3/RF fields. Official historical revisions are a
+plausible cause, but the discrepancy cannot be attributed uniquely without the
+exact archived release and verified acquisition provenance. Both comparisons
+are `NOT_COMPARABLE`: their unequal values remain visible, while all true
+pipeline-integrity checks pass. The local inputs remain immutable and are
+identified by hash.
 
-The loader fails on:
+All coefficients and HAC standard errors for all 25 portfolios reproduce with
+independent statsmodels OLS/HAC to tolerance 1e-12. FF5 and the historical
+July 1963-December 1991 anchor are prespecified sensitivity analyses.
 
-- duplicate portfolio-month keys;
-- null required values;
-- factor values that disagree across portfolios within a month;
-- an unbalanced panel; or
-- missing calendar months.
-
-Each run records file hashes, byte sizes, dimensions, sample dates, validation
-flags, configuration, and runtime in `results/tables/dataset_manifest.csv` and
-`results/run_manifest.json`.
-
-## Reproduce the analysis
+## Reproduce
 
 Python 3.13 is the reviewed environment.
 
@@ -132,26 +103,27 @@ python -m analysis.export_tables
 python reports/generate_report.py
 ```
 
-Use `requirements.txt` for supported dependency ranges,
-`requirements-lock.txt` for the reviewed runtime lock, and
-`requirements-dev-lock.txt` for the exact QA and report-generation environment.
+Canonical bootstrap settings are 5,000 common-date circular-block draws,
+12-month blocks, and seed 2026. The pipeline writes exact settings and runtime
+to `results/run_manifest.json`.
 
 ## Canonical outputs
 
 | Purpose | File |
 |---|---|
-| Validated factor panel | `results/tables/factor_model_dataset.csv` |
-| Data quality and hashes | `results/tables/dataset_manifest.csv` |
+| Validated factor panel and hashes | `results/tables/dataset_manifest.csv` |
 | Primary estimates and intervals | `results/tables/performance_scores.csv` |
+| Full alpha HAC covariance | `results/tables/joint_alpha_hac_covariance.csv` |
+| Posterior covariance and shrinkage | `results/tables/posterior_alpha_covariance.csv`, `empirical_bayes_shrinkage_matrix.csv` |
+| Joint GRS and HAC/Wald tests | `results/tables/joint_alpha_tests.csv` |
 | Bootstrap rank uncertainty | `results/tables/performance_rank_uncertainty.csv` |
-| Rolling estimates | `results/tables/rolling_performance_scores.csv` |
-| Overlap-labelled persistence | `results/tables/rank_persistence.csv` |
-| Non-overlapping transitions | `results/tables/transition_matrix.csv` |
-| Look-ahead-free validation | `results/tables/forward_performance_validation.csv` |
-| HAC forward summary | `results/tables/forward_performance_aggregate.csv` |
-| Residual tests | `results/tables/performance_residual_diagnostics.csv` |
+| 1,000-versus-final stability | `results/tables/bootstrap_stability_1000_vs_final.csv` |
+| Forward validation and robustness | `results/tables/forward_performance_aggregate.csv`, `forward_performance_robustness.csv` |
+| External validation | `results/tables/external_validation_checks.csv` |
+| Official source manifest | `results/tables/official_reference_manifest.csv` |
+| FF3/FF5 sensitivity | `results/tables/ff3_ff5_sensitivity_comparison.csv` |
 | SFA boundary evidence | `results/tables/sfa_asymmetry_diagnostics.csv` |
-| Full technical report | [`output/pdf/latent-performance-benchmarking-technical-report.pdf`](output/pdf/latent-performance-benchmarking-technical-report.pdf) |
+| Technical report | [`output/pdf/latent-performance-benchmarking-technical-report.pdf`](output/pdf/latent-performance-benchmarking-technical-report.pdf) |
 
 ![Posterior performance ranking](results/figures/performance_ranking.png)
 
@@ -161,39 +133,18 @@ Use `requirements.txt` for supported dependency ranges,
 
 ## Interpretation limits
 
-- The Fama-French three-factor model is a benchmark, not a complete return
-  model. Omitted factors can appear as alpha.
-- The posterior intervals are empirical-Bayes approximations; uncertainty in
-  the estimated hyperparameters is only approximated.
-- The 25 portfolios are related constructed portfolios, not independent
-  securities. The common-date bootstrap helps preserve dependence but 200
-  replicates give only moderate tail precision.
-- Heavy tails, serial dependence, and conditional heteroskedasticity remain in
-  residuals. HAC protects standard errors against broad dependence, not against
-  all forms of misspecification.
-- Forward validation reuses overlapping 120-month training histories even
-  though the 12-month evaluation periods do not overlap. HAC inference is used
-  for the aggregate time series.
-- Full-sample posterior ranks are descriptive and use all historical data. Only
-  the dedicated forward tables are out of sample.
-- The boundary test has limited power and the SFA distribution is restrictive.
-  The two supported cases are diagnostics of residual asymmetry, not proof of
-  managerial inefficiency.
-- Portfolio returns exclude implementation costs, taxes, capacity constraints,
-  and real-time data revisions.
+- FF3 and FF5 are benchmarks, not complete models. Omitted risks can appear as
+  alpha; `ME5 BM2` moves from rank 9 under FF3 to rank 20 under FF5, an
+  11-position change on the common sample.
+- Empirical-Bayes intervals include first-order common-mean uncertainty but do
+  not integrate over all hyperparameter uncertainty.
+- Residual non-normality, serial dependence, and ARCH effects remain. HAC
+  protects broad covariance inference but does not repair model misspecification.
+- Forward evaluation periods do not overlap, but training histories do. The
+  aggregate validation uses HAC inference and is heterogeneous by decade.
+- Current official values differ from the fixed local inputs; exact local
+  acquisition vintage remains unverified.
+- Returns omit costs, taxes, capacity, and real-time data revisions.
 
-## References
-
-- Fama, E. F., and French, K. R. (1993). Common risk factors in the returns on
-  stocks and bonds. *Journal of Financial Economics*, 33(1), 3-56.
-- Newey, W. K., and West, K. D. (1987). A simple, positive semi-definite,
-  heteroskedasticity and autocorrelation consistent covariance matrix.
-  *Econometrica*, 55(3), 703-708.
-- Jondrow, J., Lovell, C. A. K., Materov, I. S., and Schmidt, P. (1982). On the
-  estimation of technical inefficiency in the stochastic frontier production
-  function model. *Journal of Econometrics*, 19(2-3), 233-238.
-
-## Licence and citation
-
-The code is released under the MIT Licence. Citation metadata is available in
-[`CITATION.cff`](CITATION.cff).
+See `docs/METHODOLOGY.md`, `docs/DATA_DICTIONARY.md`, and `data/SOURCES.md` for
+the audit-level specification.
