@@ -34,9 +34,9 @@ a tradable strategy \\
 \hypertarget{increment-definition}{%
 \section{Increment definition}\label{increment-definition}}
 
-\[
+\begin{equation}
 \Delta _{w} = performance_{w}(rolling rank) - performance_{w}(benchmark rank)
-\]
+\end{equation}
 
 Aggregate the per-window increments using a one-sided HAC t-test for
 E(\ensuremath{\Delta }) \textgreater{} 0 and a block bootstrap. The fair verdict rests on
@@ -51,9 +51,9 @@ Suppose four evaluation years produce rolling-rank correlations (0.12,
 0.08, 0.16, 0.04) and expanding-rank correlations (0.15, 0.11, 0.18,
 0.07). Both methods predict positively:
 
-\[
+\begin{equation}
 mean(\rho _{\mathrm{rolling}})=0.10, mean(\rho _{\mathrm{expanding}})=0.1275.
-\]
+\end{equation}
 
 But the paired increments are (\ensuremath{-}0.03,\ensuremath{-}0.03,\ensuremath{-}0.02,\ensuremath{-}0.03), with mean
 \ensuremath{-}0.0275. Thus a positive forward level is perfectly compatible with a

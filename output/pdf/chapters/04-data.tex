@@ -63,9 +63,9 @@ files many-to-many and duplicating this grain \\
 
 The dependent variable of every regression is the portfolio's monthly
 \emph{excess} return,
-\[
+\begin{equation}
 y_{it} = r_{it} - r_{ft},
-\]
+\end{equation}
 the total return $r_{it}$ of portfolio $i$ in month $t$ minus the
 one-month risk-free rate $r_{ft}$. The regressors are the traded factor
 returns collected in $f_t$:
@@ -113,17 +113,17 @@ If an asset begins the month at price P\textsubscript{t\ensuremath{-}1}, pays
 dividend D\textsubscript{t}, and ends at P\textsubscript{t}, its simple
 total return is
 
-\[
+\begin{equation}
 R_{t} = (P_{t} + D_{t} - P_{t-1}) / P_{t-1}.
-\]
+\end{equation}
 
 For J constituents with beginning-of-period portfolio weights
 w\textsubscript{jt\ensuremath{-}1}, \ensuremath{\sum }\textsubscript{j}w\textsubscript{jt\ensuremath{-}1}=1, the
 one-period portfolio return is
 
-\[
+\begin{equation}
 R_{\mathrm{pt}} = \sum _{j=1}^{J} w_{jt-1}R_{\mathrm{jt}}.
-\]
+\end{equation}
 
 In a value-weighted portfolio, w\textsubscript{jt\ensuremath{-}1} is proportional to
 the firm\textquotesingle s market equity at the weighting date. Larger
@@ -144,12 +144,12 @@ to be explained by risky factors and alpha.
 \subsection{Market equity and
 book-to-market}\label{market-equity-and-book-to-market}}
 
-\[
+\begin{equation}
 \text{Market equity} = \text{share price} \times \text{shares outstanding},
-\]
-\[
+\end{equation}
+\begin{equation}
 \text{Book-to-market} = \frac{\text{accounting book equity}}{\text{market equity}}.
-\]
+\end{equation}
 
 Market equity (``size'') measures how large the firm is in the market;
 book-to-market compares the accountant's valuation of the firm's equity to
@@ -171,12 +171,12 @@ $S$/$B$ for the two size groups (small, big) and $L$/$N$/$H$ for the three
 book-to-market groups (low, neutral, high), the six building-block
 portfolios are the intersections, and the textbook factor formulas average
 them:
-\[
+\begin{equation}
 \mathrm{SMB} = \tfrac13(S/L + S/N + S/H) - \tfrac13(B/L + B/N + B/H),
-\]
-\[
+\end{equation}
+\begin{equation}
 \mathrm{HML} = \tfrac12(S/H + B/H) - \tfrac12(S/L + B/L).
-\]
+\end{equation}
 SMB is thus the average small-cap return minus the average large-cap
 return holding book-to-market spread fixed, and HML is the average
 high-B/M return minus the average low-B/M return holding size fixed. Both
@@ -184,12 +184,12 @@ are \emph{self-financing long--short} returns --- the long and short legs
 carry offsetting capital weights --- so they are returns on zero-cost
 portfolios, and Mkt-RF is likewise an excess return. The five-factor model
 appends two more long--short returns built the same way,
-\[
+\begin{equation}
 \mathrm{RMW} = \text{(robust-profitability)} - \text{(weak-profitability)},
-\]
-\[
+\end{equation}
+\begin{equation}
 \mathrm{CMA} = \text{(conservative-investment)} - \text{(aggressive-investment)}.
-\]
+\end{equation}
 
 The distinction between the $2\times3$ factor-building portfolios and the
 $5\times5$ test assets matters: the study regresses the \emph{test assets}

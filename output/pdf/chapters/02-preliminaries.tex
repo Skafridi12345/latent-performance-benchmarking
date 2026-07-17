@@ -62,9 +62,9 @@ written $A\succeq 0$, if $x^{\top}Ax\ge 0$ for all $x$, and
 \emph{positive definite} (PD, $A\succ 0$) if the inequality is strict for
 $x\ne 0$. Every covariance matrix is PSD, because for
 $\Sigma=\operatorname{Var}(X)$ and any fixed $a$,
-\[
+\begin{equation}
 a^{\top}\Sigma a=\operatorname{Var}(a^{\top}X)\ge 0 .
-\]
+\end{equation}
 This single fact recurs constantly: it is why a HAC covariance must be
 PSD to be trusted (Ch.~6), and why the variance of a portfolio combination
 of correlated alphas can be smaller than the sum of the individual
@@ -73,10 +73,10 @@ variances when the covariance is negative.
 \subsection{The spectral theorem, condition number and flooring}
 
 Any symmetric $A$ admits the \emph{eigendecomposition}
-\[
+\begin{equation}
 A=Q\Lambda Q^{\top},\qquad Q^{\top}Q=I_p,\qquad
 \Lambda=\operatorname{diag}(\lambda_1,\dots,\lambda_p),
-\]
+\end{equation}
 with orthonormal eigenvectors (columns of $Q$) and real eigenvalues
 $\lambda_i$. Then $x^{\top}Ax=\sum_i\lambda_i(q_i^{\top}x)^2$, so
 $A\succeq 0$ iff every $\lambda_i\ge 0$. Functions of $A$ act on the
@@ -111,13 +111,13 @@ rearrangement; it lets the posterior covariance be written either as a
 precision inverse or in the numerically convenient ``$V+\tau^2I$'' form.
 For a symmetric block matrix, the \emph{partitioned inverse} uses the
 Schur complement $S=A_{22}-A_{21}A_{11}^{-1}A_{12}$:
-\[
+\begin{equation}
 \begin{pmatrix}A_{11}&A_{12}\\A_{21}&A_{22}\end{pmatrix}^{-1}
 =\begin{pmatrix}
 A_{11}^{-1}+A_{11}^{-1}A_{12}S^{-1}A_{21}A_{11}^{-1} & -A_{11}^{-1}A_{12}S^{-1}\\
 -S^{-1}A_{21}A_{11}^{-1} & S^{-1}
 \end{pmatrix}.
-\]
+\end{equation}
 This is the algebra behind the conditional normal in \S\ref{prelim-mvn}.
 
 \section{Random vectors and the multivariate normal}\label{prelim-mvn}
@@ -139,10 +139,10 @@ of \S\ref{prelim-ols} turn a residual covariance into an alpha covariance.
 \subsection{The multivariate normal density}
 
 $X\sim N(\mu,\Sigma)$ with $\Sigma\succ 0$ has density
-\[
+\begin{equation}
 f(x)=(2\pi)^{-p/2}\lvert\Sigma\rvert^{-1/2}
 \exp\!\Bigl(-\tfrac12 (x-\mu)^{\top}\Sigma^{-1}(x-\mu)\Bigr).
-\]
+\end{equation}
 Affine images of normals are normal: by~\eqref{eq:affine},
 $a+BX\sim N(a+B\mu,\,B\Sigma B^{\top})$. In particular
 $\Sigma^{-1/2}(X-\mu)\sim N(0,I_p)$, the \emph{whitening} transform used
@@ -151,9 +151,9 @@ below.
 \subsection{Marginal and conditional normals}
 
 Partition $X=(X_1,X_2)$ with mean $(\mu_1,\mu_2)$ and
-\[
+\begin{equation}
 \Sigma=\begin{pmatrix}\Sigma_{11}&\Sigma_{12}\\\Sigma_{21}&\Sigma_{22}\end{pmatrix}.
-\]
+\end{equation}
 Marginals are read off directly: $X_1\sim N(\mu_1,\Sigma_{11})$. The
 conditional law is
 \begin{equation}\label{eq:condnormal}
@@ -194,9 +194,9 @@ Stack $T$ observations of a portfolio's excess return in $y\in\mathbb{R}^T$
 and place a constant and the $K$ factors in the design
 $X\in\mathbb{R}^{T\times(K+1)}$, so that with
 $\theta=(\alpha,\beta^{\top})^{\top}$,
-\[
+\begin{equation}
 y=X\theta+\varepsilon .
-\]
+\end{equation}
 Ordinary least squares chooses $\theta$ to minimise the residual sum of
 squares $S(\theta)=(y-X\theta)^{\top}(y-X\theta)$.
 
@@ -205,11 +205,11 @@ squares $S(\theta)=(y-X\theta)^{\top}(y-X\theta)$.
 Expanding,
 $S(\theta)=y^{\top}y-2\theta^{\top}X^{\top}y+\theta^{\top}X^{\top}X\theta$.
 Differentiating and setting the gradient to zero,
-\[
+\begin{equation}
 \frac{\partial S}{\partial\theta}=-2X^{\top}y+2X^{\top}X\theta=0
 \ \Longrightarrow\ X^{\top}X\hat\theta=X^{\top}y
 \ \Longrightarrow\ \hat\theta=(X^{\top}X)^{-1}X^{\top}y,
-\]
+\end{equation}
 the last step assuming $X$ has full column rank. The Hessian
 $\partial^2 S/\partial\theta\partial\theta^{\top}=2X^{\top}X\succeq 0$, so
 the stationary point is the global minimum.
@@ -286,10 +286,10 @@ Writing $\hat\theta-\theta=(X^{\top}X)^{-1}X^{\top}\varepsilon
 $Q=\operatorname*{plim}X^{\top}X/T$, the LLN gives $X^{\top}\varepsilon/T
 \xrightarrow{p}0$ so $\hat\theta\xrightarrow{p}\theta$, and the CLT applied
 to the score $X^{\top}\varepsilon/\sqrt T$ gives
-\[
+\begin{equation}
 \sqrt T(\hat\theta-\theta)\xrightarrow{d}N\bigl(0,\ Q^{-1}\,S\,Q^{-1}\bigr),
 \qquad S=\text{long-run variance of }x_t\varepsilon_t .
-\]
+\end{equation}
 The sandwich \eqref{eq:sandwich} is the finite-sample analogue; $S$ is what
 Newey--West estimates.
 
@@ -351,10 +351,10 @@ the same-month $N$-vector of residuals and let $a_t$ be the common scalar
 intercept weight from \eqref{eq:influence}. Define the alpha score vector
 $g_t=a_t e_t$. Then the stacked alpha error is
 $\hat\alpha-\alpha=\sum_t g_t$, and
-\[
+\begin{equation}
 \operatorname{Var}(\hat\alpha-\alpha)=\sum_{t}\sum_{s}\mathbb{E}[g_t g_s^{\top}]
 =\Gamma_0+\sum_{l\ge 1}(\Gamma_l+\Gamma_l^{\top}),
-\]
+\end{equation}
 estimated by \eqref{eq:nw} with the finite-sample correction
 $T/(T-P)$, $P=K+1$:
 \begin{equation}\label{eq:jointhac}
@@ -381,9 +381,9 @@ $p$-value is evidence against $H_0$ only within the stated model.
 \subsection{The Wald test}
 
 To test $H_0:R\theta=r$ for a $q\times(K{+}1)$ matrix $R$, form
-\[
+\begin{equation}
 W=(R\hat\theta-r)^{\top}\bigl[R\hat V R^{\top}\bigr]^{-1}(R\hat\theta-r).
-\]
+\end{equation}
 Under $H_0$, $R\hat\theta-r$ is asymptotically $N(0,R V R^{\top})$, so by
 the whitening argument \eqref{eq:chisq}, $W\xrightarrow{d}\chi^2_q$. The
 joint test that all 25 alphas are zero is the special case
@@ -442,9 +442,9 @@ $\mathrm{FWER}=\Pr(V\ge 1)$, where $V$ is the number of true nulls
 rejected, is controlled conservatively by Bonferroni ($p_i\le\alpha/m$).
 The \emph{false-discovery rate} is the expected proportion of false
 rejections among all rejections,
-\[
+\begin{equation}
 \mathrm{FDR}=\mathbb{E}\!\left[\frac{V}{\max(R,1)}\right],
-\]
+\end{equation}
 $R$ being the total number of rejections. FDR is the appropriate target
 when many tests are screened and a few false positives are tolerable, as
 with 25 portfolio alphas.
@@ -453,9 +453,9 @@ with 25 portfolio alphas.
 
 Order the $p$-values $p_{(1)}\le\cdots\le p_{(m)}$. Find the largest $k$
 with
-\[
+\begin{equation}
 p_{(k)}\le \frac{k}{m}\,q,
-\]
+\end{equation}
 and reject the hypotheses with the $k$ smallest $p$-values. Under
 independence or positive dependence (PRDS) this controls the FDR at level
 $(m_0/m)q\le q$, where $m_0$ is the number of true nulls. Equivalently one
@@ -483,11 +483,11 @@ closed-form shrinkage.
 \emph{Scalar case.} Let $x\mid\theta\sim N(\theta,v)$ and
 $\theta\sim N(\mu,\tau^2)$. The log-posterior in $\theta$ is, up to
 constants,
-\[
+\begin{equation}
 -\tfrac12\Bigl[\frac{(x-\theta)^2}{v}+\frac{(\theta-\mu)^2}{\tau^2}\Bigr]
 =-\tfrac12\Bigl[\theta^2\Bigl(\tfrac1v+\tfrac1{\tau^2}\Bigr)
 -2\theta\Bigl(\tfrac{x}{v}+\tfrac{\mu}{\tau^2}\Bigr)\Bigr]+\text{const}.
-\]
+\end{equation}
 Completing the square shows $\theta\mid x\sim N(m,s^2)$ with precision
 $s^{-2}=v^{-1}+\tau^{-2}$ and
 \begin{equation}\label{eq:scalar-post}
@@ -539,10 +539,10 @@ first-order condition is a generalised-least-squares mean,
 \end{equation}
 Substituting $\hat\mu(\tau)$ back gives a one-dimensional \emph{profile}
 log-likelihood in $\tau^2\ge 0$,
-\[
+\begin{equation}
 \ell_p(\tau)=-\tfrac12\log\lvert\Sigma_\tau\rvert
 -\tfrac12(\hat\alpha-\hat\mu(\tau)\mathbf 1)^{\top}\Sigma_\tau^{-1}(\hat\alpha-\hat\mu(\tau)\mathbf 1),
-\]
+\end{equation}
 maximised by bounded one-dimensional optimisation (\S\ref{prelim-num}).
 The fitted values here are $\hat\mu\approx-26$ and
 $\hat\tau\approx 94$ annualised basis points. Reported posterior intervals
@@ -568,9 +568,9 @@ serial and cross-sectional structure. The \emph{moving block bootstrap}
 resamples contiguous blocks of length $b$; concatenating $\lceil T/b\rceil$
 blocks preserves dependence within a block. The \emph{circular} variant
 wraps the index modulo $T$,
-\[
+\begin{equation}
 \text{block starting at }s:\quad \bigl((s+h-1)\bmod T\bigr)+1,\quad h=0,\dots,b-1,
-\]
+\end{equation}
 so that every observation --- including those near the start and end of the
 sample --- is equally likely to appear, removing the edge bias of the
 non-circular version. Consistency requires $b\to\infty$ with $b/T\to 0$; a
@@ -585,9 +585,9 @@ not described by a standard error. The bootstrap sidesteps this: within
 each replicate $r$ the full pipeline --- regressions, joint HAC covariance,
 empirical-Bayes hyperparameters --- is refitted and the portfolios re-ranked
 to give $R_i^{(r)}$. The rank interval is the pair of empirical quantiles
-\[
+\begin{equation}
 \bigl[\,Q_{0.025}\{R_i^{(r)}\},\ Q_{0.975}\{R_i^{(r)}\}\,\bigr],
-\]
+\end{equation}
 and the top-quintile probability is the fraction of replicates with
 $R_i^{(r)}\le 5$. These are resampling distributions, not Gaussian
 intervals, and can be asymmetric and bounded at ranks $1$ and $25$.
@@ -606,16 +606,16 @@ future alphas, so that only the \emph{ordering}, not the scale, is tested.
 
 A sample correlation near $\pm 1$ has a strongly skewed, bounded sampling
 distribution, so correlations are averaged on the \emph{Fisher} scale
-\[
+\begin{equation}
 z=\operatorname{atanh}(\rho)=\tfrac12\log\frac{1+\rho}{1-\rho}.
-\]
+\end{equation}
 This is variance-stabilising. By the delta method \eqref{eq:delta} with
 $g(\rho)=\operatorname{atanh}(\rho)$, $g'(\rho)=1/(1-\rho^2)$, and the
 approximate correlation variance $\operatorname{Var}(\hat\rho)\approx
 (1-\rho^2)^2/n$,
-\[
+\begin{equation}
 \operatorname{Var}(z)\approx g'(\rho)^2\operatorname{Var}(\hat\rho)\approx\frac{1}{n},
-\]
+\end{equation}
 free of $\rho$ to first order. Window correlations are therefore averaged
 as $z$, given HAC standard errors across windows, and mapped back with
 $\tanh$.
@@ -666,12 +666,12 @@ The half-normal stochastic-frontier model writes the residual as
 $\varepsilon=v-u$ with $v\sim N(0,\sigma_v^2)$ and a one-sided
 $u=\lvert w\rvert$, $w\sim N(0,\sigma_u^2)$, independent. Its density is the
 convolution
-\[
+\begin{equation}
 f(\varepsilon)=\int_0^{\infty} f_v(\varepsilon+u)\,f_u(u)\,du
 =\frac{2}{\sigma}\,\phi\!\Bigl(\frac{\varepsilon}{\sigma}\Bigr)\,
 \Phi\!\Bigl(-\frac{\lambda\varepsilon}{\sigma}\Bigr),
 \qquad \sigma^2=\sigma_v^2+\sigma_u^2,\ \lambda=\frac{\sigma_u}{\sigma_v}.
-\]
+\end{equation}
 \emph{Derivation.} The integrand is
 $\propto\exp\{-\tfrac12[(\varepsilon+u)^2/\sigma_v^2+u^2/\sigma_u^2]\}$;
 completing the square in $u$ shows $u$ enters as a normal kernel with mean
@@ -719,9 +719,9 @@ these notes. Understanding the term requires one step of background.
 Model (Sharpe, Lintner) holds that a single systematic factor --- the
 excess return of the aggregate market --- prices all assets: an asset's
 expected excess return should be proportional to its market ``beta,''
-\[
+\begin{equation}
 \mathbb{E}[y_{i}]=\beta_{i}\,\mathbb{E}[\text{Mkt}-\text{RF}],
-\]
+\end{equation}
 with intercept zero. Empirically this fails in a systematic way. Two
 groups of stocks earn persistently higher average returns than their
 market beta explains: \emph{small} firms (low market capitalisation) and

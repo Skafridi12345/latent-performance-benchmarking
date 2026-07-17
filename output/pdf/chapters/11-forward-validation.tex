@@ -19,9 +19,9 @@ Observe next 12 months
 
 Evaluate future alpha
 
-\[
+\begin{equation}
 A^{+}_{i} = mean_{\mathrm{future\,t}}[ y_{\mathrm{it}} - \hat{\beta }{}^{\prime}_{i,train}f_{t} ]
-\]
+\end{equation}
 
 The beta is frozen. Re-estimating beta on the evaluation year would
 allow future data to redefine the target being evaluated.
@@ -32,9 +32,9 @@ R\textsubscript{c} must be measurable with respect to information
 available at c. In probability notation, if \ensuremath{\mathcal{F}}\textsubscript{c} is the
 information set at the cutoff, then
 
-\[
+\begin{equation}
 R_{c} \in  \mathcal{F}_{c}, while A^{+}_{c} \in  \mathcal{F}_{c+12} \setminus \mathcal{F}_{c}.
-\]
+\end{equation}
 
 This is the formal meaning of ``look-ahead free.'' Every estimated beta,
 covariance, hyperparameter, scaling rule, tie-breaking rule and
@@ -57,9 +57,9 @@ For correlations, transform each annual Spearman value using z =
 atanh(\ensuremath{\rho }), aggregate z with HAC inference, then transform back with tanh.
 This prevents averaging correlations on an inappropriate raw scale.
 
-\[
+\begin{equation}
 z_{w}=atanh(\rho _{w})=\frac{1}{2}log[(1+\rho _{w})/(1-\rho _{w})], \bar{\rho }=tanh(\bar{z}).
-\]
+\end{equation}
 
 If z\textsubscript{w} is serially dependent across evaluation windows,
 estimate the long-run variance of its mean with HAC. A 95\% interval on

@@ -60,9 +60,9 @@ can reject $H_0:\alpha=0$ (Q1) yet find the ranking almost undetermined
 The estimand $\alpha_i$ is defined only \emph{relative to the chosen
 factors}. Writing the population projection of $y_i$ on $(1,f)$, the
 intercept is
-\[
+\begin{equation}
 \alpha_i=\mathbb{E}[y_{it}]-\beta_i^{\top}\mathbb{E}[f_t],
-\]
+\end{equation}
 so $\alpha_i$ is the average excess return left after removing exposure to
 \emph{those} factors and nothing more. A non-zero $\alpha_i$ can arise from
 an omitted priced risk, a friction, a nonlinear payoff, a change in factor
@@ -92,9 +92,9 @@ with weights common to all portfolios, so the alpha errors inherit that
 cross-sectional dependence and the estimator's covariance is a
 \emph{full} matrix $V$, not a diagonal one. This matters concretely: the
 precision of a comparison between two portfolios is
-\[
+\begin{equation}
 \operatorname{Var}(\hat\alpha_i-\hat\alpha_j)=V_{ii}+V_{jj}-2V_{ij},
-\]
+\end{equation}
 which positive covariance $V_{ij}$ can make far smaller --- or, if
 negative, larger --- than the sum of the marginal variances. Twenty-five
 separate standard errors discard every $V_{ij}$ and therefore misstate
@@ -108,9 +108,9 @@ estimate would exceed the truth, because extreme draws combine signal with
 favourable noise. In the simplest case $\hat\alpha_i=\alpha_i+e_i$ with
 $e_i\sim N(0,\sigma^2)$ independent, the expected maximum of the noise
 alone is
-\[
+\begin{equation}
 \mathbb{E}\Bigl[\max_{i\le N} e_i\Bigr]\ \approx\ \sigma\sqrt{2\ln N},
-\]
+\end{equation}
 so the top-ranked estimate is biased upward by roughly
 $\sigma\sqrt{2\ln 25}\approx 2.54\,\sigma$ in this idealisation. Reporting
 the raw maximum therefore overstates the leader and, symmetrically,
@@ -124,9 +124,9 @@ this reduces risk in dimension $N\ge 3$.
 
 Screening $N=25$ nulls at level $\alpha=0.05$ each makes at least one false
 rejection likely even when all nulls hold: for independent tests
-\[
+\begin{equation}
 \Pr(\text{at least one false positive})=1-(1-0.05)^{25}\approx 0.72,
-\]
+\end{equation}
 and the expected number of false positives is $N\alpha=1.25$. A ``5\%
 significant'' alpha found this way is uninformative on its own. The study
 controls the false-discovery rate with the Benjamini--Hochberg procedure of
@@ -137,9 +137,9 @@ test different nulls.
 \subsection{4. Ranks are discontinuous}
 
 The rank of portfolio $i$,
-\[
+\begin{equation}
 R_i=1+\sum_{j\ne i}\mathbf 1\{\hat s_j>\hat s_i\},
-\]
+\end{equation}
 is a step function of the scores $\hat s$: it is flat almost everywhere and
 jumps by an integer when two scores cross. Its derivative is zero wherever
 it is defined, so the delta method \eqref{eq:delta} cannot supply a
@@ -154,9 +154,9 @@ result is a rank interval, not a point.
 The rolling analysis uses windows of length $w=120$ months advanced by a
 step $s=12$. Two windows $k$ steps apart share $\max(0,w-ks)$ months, an
 overlap fraction
-\[
+\begin{equation}
 \frac{w-ks}{w}=1-\frac{ks}{w},\qquad ks<w,
-\]
+\end{equation}
 so \emph{adjacent} windows ($k=1$) share $108/120=90\%$ of their data. A
 high correlation between adjacent rolling estimates is then largely
 mechanical: the two estimates are computed from almost the same months.
@@ -171,9 +171,9 @@ This is the subtle point on which the study turns. Suppose each cell has a
 \emph{fixed} benchmark-relative level $c_i$ (small-growth structurally
 poor, small-value structurally strong) so that both the training score and
 the future alpha are noisy readings of the same $c_i$:
-\[
+\begin{equation}
 \hat s_{it}=c_i+u_{it},\qquad A^{+}_{i,t}=c_i+w_{i,t}.
-\]
+\end{equation}
 Then the cross-sectional correlation $\operatorname{Corr}_i(\hat s_{it},
 A^{+}_{i,t})$ is positive purely through the shared fixed effect $c_i$,
 with \emph{no time-varying information} in the ranking at all. A positive
@@ -226,11 +226,11 @@ be able to reconstruct and, above all, to stop at the correct conclusion.
 Formally, the study pits two hypotheses against each other. Let $\rho^{\mathrm{roll}}_t$
 and $\rho^{\mathrm{fix}}_t$ be the window-$t$ predictive scores of the
 rolling and fixed orderings and $d_t=\rho^{\mathrm{roll}}_t-\rho^{\mathrm{fix}}_t$.
-\[
+\begin{equation}
 H_{\text{stable}}:\ \mathbb{E}(d_t)\le 0
 \qquad\text{versus}\qquad
 H_{\text{dynamic}}:\ \mathbb{E}(d_t)>0 .
-\]
+\end{equation}
 The forward test of Q3 establishes only that
 $\mathbb{E}(\rho^{\mathrm{roll}}_t)>0$; it is the incremental test that
 adjudicates $H_{\text{stable}}$ against $H_{\text{dynamic}}$, and it fails

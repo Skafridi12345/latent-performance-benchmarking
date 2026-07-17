@@ -42,13 +42,13 @@ estimation error can be written as a weighted sum of residuals. Let
 \emph{g\textsubscript{t} = a\textsubscript{t}e\textsubscript{t}} the
 25-vector alpha score.
 
-\[
+\begin{equation}
 \Gamma _{\ell} = \sum _{t=\ell +1}^{T} g_{t}g{}^{\prime}_{t-\ell}, w_{\ell} = 1 - \ell /(L+1)
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \hat{V}_{\mathrm{HAC}} = c { \Gamma _{0} + \sum _{\ell =1}^{L} w_{\ell}(\Gamma _{\ell} + \Gamma {}^{\prime}_{\ell}) }
-\]
+\end{equation}
 
 Here L = 12 and c is the documented finite-sample correction. Bartlett
 weights decline linearly and make the Newey-West construction positive
@@ -63,15 +63,15 @@ e\textsubscript{t}=(\ensuremath{\varepsilon }\textsubscript{1t},\ldots,\ensurema
 Because all portfolios use the same X, the intercept weight
 a\textsubscript{t} is common. The N-vector of alpha-estimation errors is
 
-\[
+\begin{equation}
 \hat{\alpha }-\alpha  = \sum _{t=1}^{T}a_{t}e_{t} = \sum _{t=1}^{T}g_{t}.
-\]
+\end{equation}
 
 Without assuming independence through time, its covariance is
 
-\[
+\begin{equation}
 Var(\hat{\alpha }-\alpha )=\sum _{t=1}^{T}\sum _{s=1}^{T}Cov(g_{t},g_{s}).
-\]
+\end{equation}
 
 Under weak stationarity, covariance depends primarily on lag \ensuremath{\ell }=t\ensuremath{-}s.
 Grouping the double sum by lag produces the long-run covariance. Because
@@ -100,9 +100,9 @@ Same-month alpha score \\
 In the five-month example a\textsubscript{t}=0.2. Ignoring lag terms
 only for illustration, the residual cross-product matrix is
 
-\[
+\begin{equation}
 E{}^{\prime}E = [[0.140,0.130,-0.022],[0.130,0.123,-0.017],[-0.022,-0.017,0.0086]].
-\]
+\end{equation}
 
 Thus \ensuremath{\Gamma }\textsubscript{0}=0.2\textsuperscript{2}E\ensuremath{{}^{\prime}}E. With two regression parameters, the
 paper-style small-sample factor is T/(T\ensuremath{-}P)=5/3. The illustrative

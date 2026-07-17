@@ -9,9 +9,9 @@ control}\label{joint-testing-and-false-discovery-control}}
 The null hypothesis is \emph{H\textsubscript{0}: \ensuremath{\alpha } = 0} for all 25
 portfolios. The dependence-robust Wald statistic is:
 
-\[
+\begin{equation}
 W = \hat{\alpha }{}^{\prime}\hat{V}_{\mathrm{HAC}}^{-1}\hat{\alpha } \approx  \chi ^{2}_{25} \quad \text{under }H_{0}
-\]
+\end{equation}
 
 Use a linear solve rather than forming an explicit inverse:
 
@@ -28,9 +28,9 @@ or a portfolio displays managerial skill.
 \hypertarget{the-conventional-grs-test}{%
 \section{The conventional GRS test}\label{the-conventional-grs-test}}
 
-\[
+\begin{equation}
 GRS = [(T-N-K)/N] \cdot  [1 + \bar{f}{}^{\prime}\hat{\Omega }_{f}^{-1}\bar{f}]^{-1} \cdot  \hat{\alpha }{}^{\prime}\hat{\Sigma}_{\varepsilon}^{-1}\hat{\alpha } \sim F_{N,T-N-K}
-\]
+\end{equation}
 
 Here \ensuremath{\hat{\Sigma }}\textsubscript{\ensuremath{\varepsilon }} is the N \ensuremath{\times } N contemporaneous residual
 covariance, \ensuremath{\hat{\Omega }}\textsubscript{f} is the K \ensuremath{\times } K factor covariance, and \ensuremath{\bar{f}} is
@@ -99,9 +99,9 @@ The largest passing order is k = 4, so the first four nulls are
 rejected. Notice the step-up logic: one does not stop at the first local
 failure. The adjusted q-values follow from
 
-\[
+\begin{equation}
 q_{(i)} = \min_{j\geq i}{m p_{(j)}/j}, \quad \text{truncated at 1 and mapped back to the original order}.
-\]
+\end{equation}
 
 BH controls FDR under independence and under broad positive-dependence
 conditions. Portfolio tests are correlated, so the full dependence

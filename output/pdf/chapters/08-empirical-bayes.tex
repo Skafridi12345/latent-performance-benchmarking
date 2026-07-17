@@ -12,17 +12,17 @@ shrinks estimates toward a cross-sectional centre, with the amount of
 shrinkage determined by sampling uncertainty and the estimated
 dispersion of true alphas.
 
-\[
+\begin{equation}
 \hat{\alpha } | \alpha  \sim N(\alpha , \hat{V}_{\mathrm{HAC}}), \alpha  \sim N(\mu 1, \tau ^{2}I)
-\]
+\end{equation}
 
-\[
+\begin{equation}
 E(\alpha  | data) = \mu 1 + \tau ^{2}(\hat{V}_{\mathrm{HAC}} + \tau ^{2}I)^{-1}(\hat{\alpha } - \mu 1)
-\]
+\end{equation}
 
-\[
+\begin{equation}
 Var(\alpha  | data) = \tau ^{2}I - \tau ^{4}(\hat{V}_{\mathrm{HAC}} + \tau ^{2}I)^{-1}
-\]
+\end{equation}
 
 With a diagonal V, each portfolio shrinks independently. With the full
 V, a portfolio\textquotesingle s posterior update also reflects how its
@@ -35,47 +35,47 @@ square}\label{deriving-the-posterior-by-completing-the-square}}
 Write a = \ensuremath{\hat{\alpha }} and let 1 denote the N-vector of ones. Ignoring constants
 that do not depend on \ensuremath{\alpha }, Bayes\textquotesingle{} rule gives:
 
-\[
+\begin{equation}
 log p(\alpha |a) = -\frac{1}{2}(a-\alpha ){}^{\prime}V^{-1}(a-\alpha ) - \frac{1}{2}(\alpha -\mu 1){}^{\prime}(\tau ^{-2}I)(\alpha -\mu 1) + C.
-\]
+\end{equation}
 
 Collect the quadratic and linear terms in \ensuremath{\alpha }:
 
-\[
+\begin{equation}
 log p(\alpha |a) = -\frac{1}{2} \alpha {}^{\prime}P\alpha  + \alpha {}^{\prime}b + C{}^{\prime}, P = V^{-1}+\tau ^{-2}I, b=V^{-1}a+\tau ^{-2}\mu 1.
-\]
+\end{equation}
 
 Complete the square with C\textsubscript{post}=P\textsuperscript{\ensuremath{-}1} and
 m\textsubscript{post}=C\textsubscript{post}b:
 
-\[
+\begin{equation}
 -\frac{1}{2}\alpha {}^{\prime}P\alpha +\alpha {}^{\prime}b = -\frac{1}{2}(\alpha -m_{\mathrm{post}}){}^{\prime}P(\alpha -m_{\mathrm{post}}) + \frac{1}{2}m_{\mathrm{post}}{}^{\prime}Pm_{\mathrm{post}}.
-\]
+\end{equation}
 
 Therefore \ensuremath{\alpha }\textbar a is multivariate normal. Matrix identities turn the
 precision-form solution into the update form shown above:
 
-\[
+\begin{equation}
 m_{\mathrm{post}}=\mu 1+\tau ^{2}(V+\tau ^{2}I)^{-1}(a-\mu 1),
-\]
+\end{equation}
 
-\[
+\begin{equation}
 C_{\mathrm{post}}=(V^{-1}+\tau ^{-2}I)^{-1}=\tau ^{2}I-\tau ^{4}(V+\tau ^{2}I)^{-1}.
-\]
+\end{equation}
 
 If V is diagonal with entry s\textsubscript{i}\textsuperscript{2}, the formula reduces to
 the familiar scalar weighted average:
 
-\[
+\begin{equation}
 E(\alpha _{i}|a_{i}) = w_{i}a_{i} + (1-w_{i})\mu , w_{i}=\tau ^{2}/(\tau ^{2}+s_{i}^{2}).
-\]
+\end{equation}
 
 For example, with \ensuremath{\mu } = \ensuremath{-}26 bps/year, \ensuremath{\tau } = 94 bps/year, a\textsubscript{i}
 = 250 bps/year and s\textsubscript{i} = 150 bps/year,
 
-\[
+\begin{equation}
 w_{i}=94^{2}/(94^{2}+150^{2})=0.282, \quad \text{posterior mean}= 0.282(250)+0.718(-26)=51.8\ \mathrm{bps/year}.
-\]
+\end{equation}
 
 The estimate shrinks sharply because its sampling uncertainty exceeds
 the cross-sectional prior dispersion. In the actual multivariate
@@ -93,22 +93,22 @@ likelihood.
 
 Let S(\ensuremath{\tau })=V+\ensuremath{\tau }\textsuperscript{2}I. The marginal log-likelihood is
 
-\[
+\begin{equation}
 \ell (\mu ,\tau )=-\frac{1}{2}[N log(2\pi )+log|S(\tau )|+(a-\mu 1){}^{\prime}S(\tau )^{-1}(a-\mu 1)].
-\]
+\end{equation}
 
 Differentiating with respect to \ensuremath{\mu } gives
 
-\[
+\begin{equation}
 \partial \ell /\partial \mu  = 1{}^{\prime}S^{-1}(a-\mu 1).
-\]
+\end{equation}
 
 Setting this to zero yields the generalised least-squares profile
 estimate:
 
-\[
+\begin{equation}
 \hat{\mu }(\tau ) = [1{}^{\prime}S(\tau )^{-1}a]/[1{}^{\prime}S(\tau )^{-1}1].
-\]
+\end{equation}
 
 Substitute \ensuremath{\hat{\mu }}(\ensuremath{\tau }) back into \ensuremath{\ell } and optimise the resulting one-dimensional
 function over \ensuremath{\tau } \ensuremath{\geq } 0. Optimising log \ensuremath{\tau } enforces positivity, but the \ensuremath{\tau } = 0

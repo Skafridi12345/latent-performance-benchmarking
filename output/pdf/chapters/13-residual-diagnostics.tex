@@ -24,22 +24,22 @@ is time-varying \\
 For residuals e\textsubscript{1},\ldots,e\textsubscript{T}, let S denote
 sample skewness and K sample kurtosis. The Jarque-Bera statistic is
 
-\[
+\begin{equation}
 JB = T/6 \cdot  [S^{2} + (K-3)^{2}/4] \approx  \chi ^{2}_{2} \quad \text{under an IID normal null}.
-\]
+\end{equation}
 
 Let \ensuremath{\hat{\rho }}\textsubscript{\ensuremath{\ell }} be the residual autocorrelation at lag \ensuremath{\ell }. The
 Ljung-Box portmanteau statistic through lag m is
 
-\[
+\begin{equation}
 Q(m)=T(T+2) \sum _{\ell =1}^{m} \hat{\rho }_{\ell}^{2}/(T-\ell ) \approx  \chi ^{2}_{m}.
-\]
+\end{equation}
 
 For ARCH-LM, run the auxiliary regression
 
-\[
+\begin{equation}
 \hat{e}_{t}^{2} = c + \gamma _{1}\hat{e}_{t-1}^{2} + \cdots  + \gamma _{m}\hat{e}_{t-m}^{2} + \eta _{t}.
-\]
+\end{equation}
 
 Under H\textsubscript{0}:\ensuremath{\gamma }\textsubscript{1}=\ensuremath{\cdot }\ensuremath{\cdot }\ensuremath{\cdot }=\ensuremath{\gamma }\textsubscript{m}=0,
 the statistic (T\ensuremath{-}m)R\textsuperscript{2} is asymptotically \ensuremath{\chi }\textsuperscript{2}\textsubscript{m}. Rejection
