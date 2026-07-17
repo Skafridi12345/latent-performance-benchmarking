@@ -3,80 +3,150 @@
 \chapter{Full cross-portfolio Newey-West
 covariance}\label{full-cross-portfolio-newey-west-covariance}}
 
-Understand heteroskedasticity, serial correlation and cross-portfolio
-dependence, then construct a joint 25 \ensuremath{\times } 25 alpha covariance matrix.
+This chapter builds the object on which all joint inference rests: the
+full $25\times25$ covariance of the estimated alpha vector. The general
+long-run-variance and Newey--West theory was derived in \S\ref{prelim-hac};
+here we motivate why an ordinary --- or even a portfolio-by-portfolio ---
+covariance is inadequate for this problem, assemble the joint matrix from
+the influence scores of Chapter~\ref{factor-regression-and-the-meaning-of-alpha},
+and audit it numerically.
 
 \hypertarget{why-ordinary-ols-covariance-is-inadequate}{%
 \section{Why ordinary OLS covariance is
 inadequate}\label{why-ordinary-ols-covariance-is-inadequate}}
 
+The classical OLS variance $\sigma^2(X^{\top}X)^{-1}$ rests on residuals
+that are homoskedastic, serially independent, and (across portfolios)
+mutually uncorrelated. Monthly factor-model residuals violate all three,
+so the classical variance is the wrong uncertainty object. The general
+form is the sandwich of \S\ref{prelim-ols},
+$\operatorname{Var}(\hat\theta)=(X^{\top}X)^{-1}X^{\top}\Omega X(X^{\top}X)^{-1}$,
+in which the ``bread'' $(X^{\top}X)^{-1}$ is fixed but the ``meat''
+$X^{\top}\Omega X$ must be estimated without assuming $\Omega=\sigma^2 I$.
+
 \hypertarget{heteroskedasticity}{%
 \subsection{Heteroskedasticity}\label{heteroskedasticity}}
 
-The conditional variance of residuals changes over time.
+The conditional residual variance $\operatorname{Var}(\varepsilon_{it}\mid X)$
+changes over time --- volatility clusters, with calm and turbulent regimes.
+If the true $\operatorname{Var}(\varepsilon_{it})=\sigma_t^2$ varies but the
+classical formula plugs in a single $\hat\sigma^2$, the reported standard
+error is biased, and the direction of the bias depends on whether large
+residuals coincide with high-leverage months. The ARCH-LM test rejects
+constant conditional variance for all 25 portfolios (Chapter~13).
 
 \hypertarget{autocorrelation}{%
 \subsection{Autocorrelation}\label{autocorrelation}}
 
-Residual shocks remain related across nearby months.
+Residual shocks remain correlated across nearby months, so
+$\operatorname{Cov}(\varepsilon_{it},\varepsilon_{i,t-\ell})\neq 0$ for
+small $\ell$. The classical variance uses only the contemporaneous term and
+ignores these lag covariances; the correct object is the \emph{long-run}
+variance \eqref{eq:lrv}, which sums the autocovariances across lags. Ignoring
+positive serial dependence understates the true sampling variability. The
+Ljung--Box test rejects the no-autocorrelation null for many portfolios
+(Chapter~13), and the Newey--West estimator includes lags to $L=12$.
 
 \hypertarget{cross-sectional-dependence}{%
 \subsection{Cross-sectional
 dependence}\label{cross-sectional-dependence}}
 
-Different portfolios are hit by the same monthly shocks.
+Different portfolios are hit by the same monthly shocks --- a common market
+move affects all 25 at once --- so
+$\operatorname{Cov}(\varepsilon_{it},\varepsilon_{jt})\neq 0$ across $i\neq j$.
+This is dependence \emph{across the cross-section within a date}, invisible
+to any single-portfolio calculation. It is precisely the off-diagonal
+information that the joint test of Chapter~7 and the multivariate shrinkage
+of Chapter~8 consume: the variance of a difference
+$\hat\alpha_i-\hat\alpha_j$ is $V_{ii}+V_{jj}-2V_{ij}$, and dropping $V_{ij}$
+misstates every pairwise comparison.
 
-Twenty-five separate HAC standard errors preserve the first two effects
-within each portfolio, but discard the third. Joint testing and
-multivariate shrinkage require the off-diagonal alpha covariances as
-well.
+Twenty-five separate HAC standard errors preserve heteroskedasticity and
+serial dependence \emph{within} each portfolio --- they give the 25 diagonal
+entries of the covariance --- but discard the cross-portfolio covariances.
+The construction below recovers the full matrix.
 
 \hypertarget{influence-score-construction}{%
 \section{Influence-score
 construction}\label{influence-score-construction}}
 
-Because every portfolio uses the same factor matrix, the OLS intercept
-estimation error can be written as a weighted sum of residuals. Let
-\emph{a\textsubscript{t}} be the intercept weight for date t,
-\emph{e\textsubscript{t}} the 25-vector of same-month residuals, and
-\emph{g\textsubscript{t} = a\textsubscript{t}e\textsubscript{t}} the
-25-vector alpha score.
-
-\begin{equation}
-\Gamma _{\ell} = \sum _{t=\ell +1}^{T} g_{t}g{}^{\prime}_{t-\ell}, w_{\ell} = 1 - \ell /(L+1)
+Because every portfolio uses the same factor matrix $X$, the OLS intercept
+estimation error is a weighted sum of residuals with weights common to all
+portfolios (\S\ref{deriving-the-intercept-influence-weights}). Let $a_t$ be
+the intercept weight for month $t$, $e_t$ the 25-vector of same-month
+residuals, and $g_t=a_t e_t$ the 25-vector alpha score. The lag-$\ell$
+score cross-product and the Bartlett weights are
+\begin{equation}\label{eq:ch6-gamma}
+\Gamma_\ell = \sum_{t=\ell+1}^{T} g_t\,g_{t-\ell}^{\top},
+\qquad w_\ell = 1 - \frac{\ell}{L+1},
 \end{equation}
-
-\begin{equation}
-\hat{V}_{\mathrm{HAC}} = c { \Gamma _{0} + \sum _{\ell =1}^{L} w_{\ell}(\Gamma _{\ell} + \Gamma {}^{\prime}_{\ell}) }
+and the joint HAC covariance is
+\begin{equation}\label{eq:ch6-vhac}
+\hat V_{\mathrm{HAC}} = c\,\Bigl\{\Gamma_0
++ \sum_{\ell=1}^{L} w_\ell\,(\Gamma_\ell + \Gamma_\ell^{\top})\Bigr\},
 \end{equation}
-
-Here L = 12 and c is the documented finite-sample correction. Bartlett
-weights decline linearly and make the Newey-West construction positive
-semi-definite in theory.
+with $L=12$ lags and the finite-sample correction $c=T/(T-P)$, $P=K+1$.
+This is the applied form of the general estimator \eqref{eq:nw} and its
+joint specialisation \eqref{eq:jointhac} derived in \S\ref{prelim-hac}; the
+Bartlett weights decline linearly with lag and guarantee that
+$\hat V_{\mathrm{HAC}}$ is positive semi-definite (the Fej\'er-kernel
+argument there).
 
 \hypertarget{deriving-the-joint-covariance-from-first-principles}{%
 \section{Deriving the joint covariance from first
 principles}\label{deriving-the-joint-covariance-from-first-principles}}
 
-Stack the N portfolio residuals at date t into
-e\textsubscript{t}=(\ensuremath{\varepsilon }\textsubscript{1t},\ldots,\ensuremath{\varepsilon }\textsubscript{Nt})\ensuremath{{}^{\prime}}.
-Because all portfolios use the same X, the intercept weight
-a\textsubscript{t} is common. The N-vector of alpha-estimation errors is
-
-\begin{equation}
-\hat{\alpha }-\alpha  = \sum _{t=1}^{T}a_{t}e_{t} = \sum _{t=1}^{T}g_{t}.
+The intercept influence weight is itself
+$a_t = q_0^{\top}(X^{\top}X)^{-1}x_t$, where $q_0=(1,0,\dots,0)^{\top}$
+selects the intercept and $x_t^{\top}$ is row $t$ of $X$
+(\S\ref{deriving-the-intercept-influence-weights}); it is a fixed scalar
+depending only on the common design, not on any portfolio's returns. Stack
+the $N$ portfolio residuals at month $t$ into
+$e_t=(\varepsilon_{1t},\dots,\varepsilon_{Nt})^{\top}$. Because the same
+$a_t$ multiplies every portfolio, the $N$-vector of alpha-estimation errors
+and its per-month score are
+\begin{equation}\label{eq:ch6-alphaerr}
+\hat\alpha-\alpha = \sum_{t=1}^{T} a_t e_t = \sum_{t=1}^{T} g_t,
+\qquad g_t = a_t e_t .
+\end{equation}
+Without assuming independence through time, the exact covariance is the
+full double sum
+\begin{equation}\label{eq:ch6-doublesum}
+\operatorname{Var}(\hat\alpha-\alpha)
+= \sum_{t=1}^{T}\sum_{s=1}^{T}\operatorname{Cov}(g_t,g_s).
 \end{equation}
 
-Without assuming independence through time, its covariance is
-
-\begin{equation}
-Var(\hat{\alpha }-\alpha )=\sum _{t=1}^{T}\sum _{s=1}^{T}Cov(g_{t},g_{s}).
+\textbf{Grouping by lag.} The double sum has $T^2$ terms indexed by
+$(t,s)$; re-index them by the lag $\ell=t-s$. Under weak stationarity the
+covariance depends on $\ell$ alone, so define
+$\Gamma_\ell=\operatorname{Cov}(g_t,g_{t-\ell})=\mathbb{E}[g_t g_{t-\ell}^{\top}]$.
+The $T$ diagonal terms ($\ell=0$) contribute $\Gamma_0$. For each
+$\ell\ge1$, the pairs with $t-s=\ell$ contribute $\Gamma_\ell$, while the
+pairs with $s-t=\ell$ contribute
+$\operatorname{Cov}(g_t,g_{t+\ell})=\Gamma_{-\ell}=\Gamma_\ell^{\top}$
+(covariance of a stationary series satisfies $\Gamma_{-\ell}=\Gamma_\ell^{\top}$).
+Collecting the two directions, the double sum collapses to the one-sided
+lag representation
+\begin{equation}\label{eq:ch6-lagrep}
+\operatorname{Var}(\hat\alpha-\alpha)
+= \Gamma_0 + \sum_{\ell=1}^{T-1}\bigl(\Gamma_\ell+\Gamma_\ell^{\top}\bigr),
 \end{equation}
+which is exactly the long-run covariance \eqref{eq:lrv}. The transpose term
+is not decoration: it supplies the negative-lag contributions and makes the
+matrix symmetric.
 
-Under weak stationarity, covariance depends primarily on lag \ensuremath{\ell }=t\ensuremath{-}s.
-Grouping the double sum by lag produces the long-run covariance. Because
-high-lag sample covariances are noisy, Newey-West truncates at L and
-downweights larger lags using w\textsubscript{\ensuremath{\ell }}.
+\textbf{From population to estimator.} Three finite-sample steps turn the
+population identity \eqref{eq:ch6-lagrep} into the usable estimator
+\eqref{eq:ch6-vhac}. First, each population $\Gamma_\ell$ is replaced by its
+sample cross-product $\hat\Gamma_\ell=\sum_{t=\ell+1}^{T} g_t g_{t-\ell}^{\top}$
+from \eqref{eq:ch6-gamma}. Second, the sum is \emph{truncated} at a
+bandwidth $L\ll T$, because $\hat\Gamma_\ell$ at large $\ell$ is built from
+only $T-\ell$ products and is too noisy to include. Third, each retained lag
+is \emph{tapered} by the Bartlett weight $w_\ell=1-\ell/(L+1)$. Element
+$(i,j)$ of the result estimates
+$\operatorname{Cov}(\hat\alpha_i,\hat\alpha_j)$, and setting $i=j$ recovers
+the single-portfolio HAC variance \eqref{eq:hac-alpha} --- the identity the
+numerical audit below exploits.
 
 \begin{longtable}[]{@{}p{0.20\textwidth}p{0.34\textwidth}p{0.36\textwidth}@{}}
 \toprule\noalign{}
@@ -94,24 +164,80 @@ Same-month alpha score \\
 \ensuremath{\hat{V}}\textsubscript{HAC} & N \ensuremath{\times } N & Joint alpha-estimation covariance \\
 \end{longtable}
 
+\section{Tapering, lag length, and the finite-sample correction}\label{ch6-bandwidth}
+
+Three choices in \eqref{eq:ch6-vhac} deserve explanation, because they
+control whether the estimate is a valid covariance and how much it can be
+trusted.
+
+\textbf{Why taper (positive semi-definiteness).} A truncated \emph{un}weighted
+sum $\Gamma_0+\sum_{\ell=1}^{L}(\Gamma_\ell+\Gamma_\ell^{\top})$ --- a
+rectangular window --- need not be positive semi-definite, and a
+``covariance'' with a negative eigenvalue is meaningless (it would imply a
+portfolio combination of alphas with negative variance). The Bartlett taper
+fixes this. The weighted sum can be written as a
+$T^{-1}\sum_{|\ell|\le L}(1-|\ell|/(L+1))\sum_t g_t g_{t-\ell}^{\top}$, which
+is a \emph{Fej\'er-kernel} (triangular) smoothing of the periodogram; the
+Fej\'er kernel is non-negative, so the resulting matrix is guaranteed
+positive semi-definite for any data (\S\ref{prelim-hac}). This is why the
+linearly declining weights $w_\ell=1-\ell/(L+1)$ are used rather than a
+sharp cutoff.
+
+\textbf{Choosing the bandwidth $L$.} The lag length trades bias against
+variance. Too small an $L$ omits genuine dependence beyond lag $L$ and
+biases the variance downward when autocorrelation is positive and
+persistent; too large an $L$ admits many noisy $\hat\Gamma_\ell$ and
+inflates the estimator's own sampling variability. Consistency of the HAC
+estimator requires $L\to\infty$ but $L/T\to0$ as $T\to\infty$, so the
+bandwidth must grow with the sample yet slowly. The canonical monthly
+regressions fix $L=12$: one year of lags, a standard convention that lets
+residual dependence persist up to twelve months while keeping each
+$\hat\Gamma_\ell$ well estimated on $T=1{,}193$ months. Where the series is
+short --- the annual forward-validation statistics of Chapter~11 --- a fixed
+$L=12$ would be too large, so the automatic Newey--West (1994) rule
+$L=\lfloor 4(T/100)^{2/9}\rfloor$ is used instead (\S\ref{prelim-hac}).
+
+\textbf{The finite-sample correction $c=T/(T-P)$.} Residuals are computed
+from an estimated $\hat\theta$, which consumes $P=K+1$ degrees of freedom
+and makes the raw residual cross-products slightly too small on average,
+exactly as dividing by $T$ rather than $T-P$ understates the OLS residual
+variance. Multiplying by $c=T/(T-P)$ is the multivariate analogue of that
+degrees-of-freedom correction and removes the leading small-sample downward
+bias; with $T=1{,}193$ and $P=4$ it is $c\approx1.003$, negligible here but
+retained for exactness and reported in the manifest.
+
 \hypertarget{toy-covariance-calculation}{%
 \section{Toy covariance calculation}\label{toy-covariance-calculation}}
 
-In the five-month example a\textsubscript{t}=0.2. Ignoring lag terms
-only for illustration, the residual cross-product matrix is
-
-\begin{equation}
-E{}^{\prime}E = [[0.140,0.130,-0.022],[0.130,0.123,-0.017],[-0.022,-0.017,0.0086]].
+Reusing the five-month example of Chapter~\ref{factor-regression-and-the-meaning-of-alpha},
+the centred factor gives $a_t=0.2$ for every $t$. Ignoring lag terms only
+for illustration, the residual cross-product matrix across the three
+portfolios A, B, C is
+\begin{equation}\label{eq:ch6-toy}
+E^{\top}E = \begin{bmatrix}
+ 0.140 &  0.130 & -0.022\\
+ 0.130 &  0.123 & -0.017\\
+-0.022 & -0.017 &  0.0086
+\end{bmatrix}.
 \end{equation}
-
-Thus \ensuremath{\Gamma }\textsubscript{0}=0.2\textsuperscript{2}E\ensuremath{{}^{\prime}}E. With two regression parameters, the
-paper-style small-sample factor is T/(T\ensuremath{-}P)=5/3. The illustrative
-covariance becomes (5/3)\ensuremath{\times }0.04\ensuremath{\times }E\ensuremath{{}^{\prime}}E. The positive A-B covariance means
-their alpha estimation errors tend to move together; treating them as
-independent would discard this information.
+Thus the contemporaneous score cross-product is $\Gamma_0 = 0.2^2\,E^{\top}E$,
+and with $P=2$ regression parameters the finite-sample factor is
+$c=T/(T-P)=5/3$, so the illustrative covariance is
+$\tfrac53\times 0.04\times E^{\top}E$. The positive A--B entry means the two
+portfolios' alpha-estimation errors tend to move together; treating them as
+independent would discard exactly this cross-portfolio information.
 
 \hypertarget{numerical-audit}{%
 \section{Numerical audit}\label{numerical-audit}}
+
+A HAC covariance is only useful if it is genuinely a covariance. Bartlett
+weights guarantee positive semi-definiteness in theory
+(\S\ref{prelim-hac}), but finite-precision arithmetic can introduce tiny
+asymmetries and negative eigenvalues, so the estimate is checked before
+use: it is symmetrised, its eigenvalues are inspected, and only negligible,
+scale-relative negatives are floored. A materially indefinite result
+\emph{raises} rather than being silently regularised, so numerical repair
+is always visible in the run manifest.
 
 \begin{verbatim}
 V = 0.5 * (V + V.T)                   # remove floating asymmetry
@@ -124,13 +250,41 @@ condition_number = np.linalg.cond(V)
 # Record any tiny numerical flooring; never hide large regularisation.
 \end{verbatim}
 
-\textbf{Paper result.} The canonical 25 \ensuremath{\times } 25 matrix is positive definite
-without flooring and has condition number 139.4. This supports stable
-linear solves, but does not make the regression model itself correct.
+\textbf{Paper result.} The canonical $25\times25$ matrix is positive
+definite without any flooring and has condition number $139.4$; the ratio
+of largest to smallest eigenvalue is finite and manageable, so the linear
+solves behind the Wald statistic (Chapter~7) and the empirical-Bayes
+posterior (Chapter~8) are numerically stable. A large condition number
+would signal near-collinearity of the alpha errors and unstable inversion;
+$139.4$ is comfortably below that regime.
+
+\textbf{Independent replication.} The diagonal of $\hat V_{\mathrm{HAC}}$
+must equal the 25 single-portfolio HAC variances \eqref{eq:hac-alpha}.
+Recomputing each portfolio's alpha and HAC standard error with an
+independent implementation (\texttt{statsmodels}) reproduces the diagonal
+to a tolerance of $10^{-12}$ for all 25 portfolios. This checks the joint
+construction against a separate codebase; two functions calling the same
+internal routine would not constitute independent replication. Off-diagonal
+entries have no single-portfolio analogue and are validated instead through
+the positive-definiteness and symmetry checks above.
 
 \hypertarget{what-hac-does-and-does-not-do}{%
 \section{What HAC does and does not
 do}\label{what-hac-does-and-does-not-do}}
+
+It is worth stating the estimator's remit precisely, because HAC is easy to
+over-trust. It makes the \emph{covariance estimate} robust to the forms of
+dependence it models --- heteroskedasticity, serial correlation to lag $L$,
+and contemporaneous cross-portfolio correlation --- and thereby makes the
+joint Wald test of Chapter~7 asymptotically valid without an IID or
+Gaussian assumption. It does none of the following: it does not make the
+factor model correct, does not recover omitted priced factors or repair
+time-varying betas, does not capture serial dependence beyond lag $L$, and
+does not fix data errors such as a bad join or the wrong units. HAC is a
+statement about the \emph{sampling distribution of the estimator}, not
+about the \emph{truth of the model}; a portfolio can have a perfectly
+estimated HAC standard error around an alpha that is entirely an artefact
+of an incomplete benchmark.
 
 \begin{longtable}[]{@{}p{0.29\textwidth}p{0.63\textwidth}@{}}
 \toprule\noalign{}
