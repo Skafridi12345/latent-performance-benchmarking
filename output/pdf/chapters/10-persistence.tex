@@ -6,17 +6,21 @@ mobility}\label{rolling-persistence-overlap-and-quintile-mobility}}
 \hypertarget{the-overlap-illusion}{%
 \section{The overlap illusion}\label{the-overlap-illusion}}
 
-Two 120-month windows ending 12 months apart share 108 months, or 90\%
-of their data. High correlation between their rankings is therefore
-partly mechanical. A 120-month separation produces disjoint decades and
-is the structurally interpretable comparison.
-
-\begin{equation}
-Overlap fraction = max(0, W - h) / W
+The rolling analysis re-estimates the ranking on a window of length
+$W=120$ months advanced by a step of $s=12$ months. Two windows separated
+by $k$ steps share their data except for the $ks$ months at each end, so
+their overlap fraction is
+\begin{equation}\label{eq:ch10-overlap}
+\text{overlap}(k) = \frac{\max(0,\,W-ks)}{W} = \max\!\Bigl(0,\,1-\frac{ks}{W}\Bigr).
 \end{equation}
-
-For W = 120 and horizon h = 12, the fraction is 0.90; for h = 120, it is
-zero.
+Adjacent windows ($k=1$) therefore share $108/120=90\%$ of their months.
+A high correlation between two such rankings is largely \emph{mechanical}:
+they are computed from almost the same data, so agreement measures shared
+inputs, not economic persistence (\S\ref{rq-difficulties}). Genuine
+structural persistence can only be read from \emph{non-overlapping}
+comparisons, which require $ks\ge W$, i.e.\ $k\ge W/s=10$ steps, a
+separation of $120$ months. At that horizon the two ten-year windows are
+disjoint and the correlation is interpretable.
 
 \hypertarget{persistence-metrics}{%
 \section{Persistence metrics}\label{persistence-metrics}}
@@ -58,7 +62,23 @@ Horizon & Window overlap & Mean rank correlation & Interpretation \\
 120 months & 0\% & 0.156 & Weak structural persistence \\
 \end{longtable}
 
-The same-quintile probability at the disjoint 120-month horizon is about
-25\%, only modestly above the 20\% uniform-mobility benchmark. This
-warns against treating the point ordering as a stable hierarchy.
+Mobility is summarised by a \emph{transition matrix} over the five score
+quintiles. With $q_{it}$ the quintile of portfolio $i$ at time $t$, the
+entry
+\begin{equation}\label{eq:ch10-transition}
+P_{jk} = \Pr\bigl(q_{i,t+h}=k \mid q_{it}=j\bigr),
+\qquad \sum_{k=1}^{5} P_{jk}=1,
+\end{equation}
+is the probability that a portfolio in quintile $j$ moves to quintile $k$
+over horizon $h$; each row is a probability distribution. The natural
+null is \emph{uniform mobility}: if next-period quintile were independent
+of the current one, every $P_{jk}$ would be $1/5=20\%$, so a stay
+probability $P_{jj}$ near $20\%$ signals essentially no persistence, while
+$P_{jj}=1$ would mean a frozen hierarchy. At the disjoint 120-month
+horizon the mean same-quintile probability is about $25\%$ --- only
+modestly above the $20\%$ uniform benchmark and far below a frozen
+ordering. Combined with the weak non-overlapping rank correlation, this
+warns strongly against treating the point ordering as a stable league
+table; it is the estimation counterpart of the wide bootstrap rank
+intervals of Chapter~9.
 
