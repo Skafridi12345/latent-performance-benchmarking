@@ -3,32 +3,72 @@
 \chapter{Capstone: reproduce the complete
 study}\label{capstone-reproduce-the-complete-study}}
 
-Complete the following in order. Each box is stored locally in your
-browser when checked.
+Complete the following in order. Each step corresponds to a stage of the
+pipeline (Chapter~16) and to the chapter that derives it; treat the list as
+a reproduction checklist.
 
 \hypertarget{capstone-list}{}
-Document official data URLs, blocks, units, dates and hashes. Parse the
-value-weighted 25-portfolio returns and FF3 factors. Create one
-validated portfolio-month panel with a strict many-to-one factor join.
-Fit 25 FF3 regressions and reproduce coefficients independently.
-Construct the full 25 \ensuremath{\times } 25 joint HAC alpha covariance. Run the joint
-HAC/Wald test and secondary GRS test. BH-correct the 25 raw-alpha tests
-as one family. Fit \ensuremath{\mu } and \ensuremath{\tau } and calculate multivariate EB posterior means
-and intervals. Run 5,000 full-refit common-date circular-block bootstrap
-draws. Report rank intervals and top/bottom quintile probabilities. Run
-120-month rolling persistence at 12-, 60- and 120-month horizons with
-overlap labels. Build the non-overlapping quintile transition matrix and
-Jaccard measures. Run 89 strictly forward 12-month evaluations with
-frozen training estimates. Aggregate correlation and spread time series
-with HAC inference. Implement characteristic, expanding-window and
-oracle benchmark rankings. Test rolling-minus-benchmark increments with
-HAC and block bootstrap. Run FF3/FF5 common-sample and 60/120/180-month
-sensitivity analyses. Run Jarque-Bera, Ljung-Box and ARCH-LM residual
-diagnostics. Fit SFA only as a residual diagnostic; boundary-test and
-BH-correct its p-values. Separate local integrity, independent
-replication, source reconciliation and literature anchors. Write
-manifests, canonical CSVs, figures and a report with generated claims.
-Run tests/lint, render the report, and visually inspect every page.
+\begin{enumerate}
+\tightlist
+\item
+  Document official data URLs, blocks, units, dates and hashes (Chapter~4).
+\item
+  Parse the value-weighted 25-portfolio returns and FF3 factors.
+\item
+  Create one validated portfolio-month panel with a strict many-to-one
+  factor join.
+\item
+  Fit 25 FF3 regressions and reproduce the coefficients independently
+  (Chapter~5).
+\item
+  Construct the full $25\times25$ joint HAC alpha covariance (Chapter~6).
+\item
+  Run the joint HAC/Wald test and the secondary GRS test (Chapter~7).
+\item
+  BH-correct the 25 raw-alpha tests as one family.
+\item
+  Fit $\mu$ and $\tau$ and compute multivariate EB posterior means and
+  intervals (Chapter~8).
+\item
+  Run 5{,}000 full-refit common-date circular-block bootstrap draws
+  (Chapter~9).
+\item
+  Report rank intervals and top/bottom quintile probabilities.
+\item
+  Run rolling persistence at 12-, 60- and 120-month horizons with overlap
+  labels (Chapter~10).
+\item
+  Build the non-overlapping quintile transition matrix and Jaccard
+  measures.
+\item
+  Run 89 strictly forward 12-month evaluations with frozen training
+  estimates (Chapter~11).
+\item
+  Aggregate the correlation and spread time series with HAC inference.
+\item
+  Implement the characteristic, expanding-window and oracle benchmark
+  rankings (Chapter~12).
+\item
+  Test the rolling-minus-benchmark increments with HAC and a block
+  bootstrap.
+\item
+  Run the FF3/FF5 common-sample and 60/120/180-month sensitivity analyses
+  (Chapter~13).
+\item
+  Run the Jarque--Bera, Ljung--Box and ARCH-LM residual diagnostics.
+\item
+  Fit SFA only as a residual diagnostic; boundary-test and BH-correct its
+  $p$-values (Chapter~14).
+\item
+  Separate local integrity, independent replication, source reconciliation
+  and literature anchors (Chapter~15).
+\item
+  Write the manifest, canonical CSVs, figures and a report with generated
+  claims.
+\item
+  Run the tests and linter, render the report, and visually inspect every
+  page.
+\end{enumerate}
 
 \hypertarget{assessment-standard}{%
 \section{Assessment standard}\label{assessment-standard}}
