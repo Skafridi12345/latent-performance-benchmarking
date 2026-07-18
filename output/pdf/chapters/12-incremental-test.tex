@@ -6,10 +6,20 @@ ordering?}\label{the-incremental-test-dynamic-forecast-or-stable-ordering}}
 \hypertarget{the-identification-problem}{%
 \section{The identification problem}\label{the-identification-problem}}
 
-Suppose FF3 persistently underprices a fixed set of characteristic
-cells. Past alpha will then predict future alpha even if annual
-re-estimation contains no useful time variation. The forward level test
-cannot distinguish this from dynamic ranking skill.
+Suppose FF3 persistently underprices a \emph{fixed} set of characteristic
+cells --- small-growth structurally poor, small-value strong. Formally, if
+both the training score and the future alpha are noisy readings of the same
+fixed cell effect $c_i$ (\S\ref{rq-difficulties}),
+\begin{equation}\label{eq:ch12-fixedeffect}
+\hat s_{it} = c_i + u_{it},\qquad A^{+}_{i,t} = c_i + w_{i,t},
+\end{equation}
+then their cross-sectional correlation is positive through the shared $c_i$
+alone, with \emph{no} time-varying information in the ranking. Past alpha
+therefore predicts future alpha even when annual re-estimation adds nothing.
+The forward \emph{level} test of Chapter~11 cannot distinguish this stable
+ordering from genuine dynamic ranking skill; separating the two requires a
+test of \emph{equal predictive accuracy} against a fixed comparator
+(\S\ref{prelim-forecast}).
 
 \hypertarget{comparator-rankings}{%
 \section{Comparator rankings}\label{comparator-rankings}}
@@ -34,14 +44,22 @@ a tradable strategy \\
 \hypertarget{increment-definition}{%
 \section{Increment definition}\label{increment-definition}}
 
-\begin{equation}
-\Delta _{w} = performance_{w}(rolling rank) - performance_{w}(benchmark rank)
+For each evaluation window $w$, let $\rho^{\mathrm{roll}}_w$ and
+$\rho^{\mathrm{bench}}_w$ be the predictive scores --- rank correlation, or
+top-minus-bottom quintile spread --- of the rolling ranking and a comparator
+on the \emph{same} future observations \eqref{eq:ch11-fwdalpha}, and form
+the per-window skill differential
+\begin{equation}\label{eq:ch12-increment}
+d_w = \rho^{\mathrm{roll}}_w - \rho^{\mathrm{bench}}_w .
 \end{equation}
-
-Aggregate the per-window increments using a one-sided HAC t-test for
-E(\ensuremath{\Delta }) \textgreater{} 0 and a block bootstrap. The fair verdict rests on
-the expanding-window comparator, because both rankings use only
-information available at the cutoff.
+Its mean $\bar d$ standardised by a HAC standard error is precisely the
+\emph{Diebold--Mariano} statistic of equal predictive accuracy
+\eqref{eq:dm}, tested one-sided against the prespecified alternative
+$\mathbb{E}(d_w)>0$; because the comparators are re-estimated on
+rolling/expanding schemes it carries the Giacomini--White interpretation
+(\S\ref{prelim-forecast}). A block bootstrap corroborates the HAC $t$-test.
+The fair verdict rests on the expanding-window comparator, because both
+rankings then use only information available at the cutoff.
 
 \hypertarget{a-numerical-example-that-separates-level-from-increment}{%
 \section{A numerical example that separates level from
@@ -51,15 +69,19 @@ Suppose four evaluation years produce rolling-rank correlations (0.12,
 0.08, 0.16, 0.04) and expanding-rank correlations (0.15, 0.11, 0.18,
 0.07). Both methods predict positively:
 
-\begin{equation}
-mean(\rho _{\mathrm{rolling}})=0.10, mean(\rho _{\mathrm{expanding}})=0.1275.
+\begin{equation}\label{eq:ch12-means}
+\overline{\rho}_{\mathrm{rolling}} = 0.10,
+\qquad
+\overline{\rho}_{\mathrm{expanding}} = 0.1275 .
 \end{equation}
 
-But the paired increments are (\ensuremath{-}0.03,\ensuremath{-}0.03,\ensuremath{-}0.02,\ensuremath{-}0.03), with mean
-\ensuremath{-}0.0275. Thus a positive forward level is perfectly compatible with a
-negative incremental contribution from rolling re-estimation. The shared
-fixed cross-sectional signal explains the positive level; discarding
-older observations adds estimation noise.
+But the paired increments are $(-0.03,-0.03,-0.02,-0.03)$, with mean
+$\bar d=-0.0275$. Thus a positive forward level is perfectly compatible with
+a \emph{negative} incremental contribution from rolling re-estimation: the
+shared fixed cross-sectional signal $c_i$ explains the positive level, while
+discarding older observations to re-estimate on a 120-month window adds
+estimation noise. Only the paired differential --- not either level ---
+answers the dynamic-skill question.
 
 \hypertarget{interpretation-of-the-reported-evidence}{%
 \section{Interpretation of the reported
