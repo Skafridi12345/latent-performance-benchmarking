@@ -41,16 +41,31 @@ project/
 \hypertarget{canonical-pipeline}{%
 \section{Canonical pipeline}\label{canonical-pipeline}}
 
-Load + validate
-
-Estimate + infer
-
-Resample + validate
-
-Export canonical tables
-
-Generate report
-
+The pipeline runs as a linear sequence of stages, each implemented in a
+module of the same name and documented in the chapter shown:
+\begin{enumerate}
+\tightlist
+\item
+  \textbf{Load and validate} the immutable panel (Chapter~4).
+\item
+  \textbf{Estimate and infer}: FF3 alphas (Chapter~5), the joint HAC
+  covariance (Chapter~6), the joint tests and false-discovery control
+  (Chapter~7), and the empirical-Bayes posteriors (Chapter~8).
+\item
+  \textbf{Resample and validate}: the common-date block bootstrap
+  (Chapter~9), persistence and transitions (Chapter~10), and the forward
+  and incremental tests (Chapters~11--12).
+\item
+  \textbf{Diagnose and reconcile}: residual diagnostics and FF5 sensitivity
+  (Chapter~13), then external validation (Chapter~15).
+\item
+  \textbf{Export} the canonical tables and \textbf{generate} the report,
+  every number of which is read back from those tables rather than
+  recomputed.
+\end{enumerate}
+The whole sequence is deterministic --- fixed seed 2026 and pinned
+dependencies --- so a second run reproduces the outputs bit for bit. It is
+invoked by:
 \begin{verbatim}
 python -m pip install -r requirements-dev-lock.txt
 pytest -q
