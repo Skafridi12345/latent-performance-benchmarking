@@ -51,10 +51,12 @@ equality comparison & No, but must be disclosed \\
 \section{Known-result validation without result
 fitting}\label{known-result-validation-without-result-fitting}}
 
-Check broad expectations---such as HML loading increasing toward high
-book-to-market and SMB exposure changing across size groups---but treat
-them as diagnostics. Unexpected patterns trigger investigation; they
-must not be overwritten or tuned away.
+Check broad expectations --- such as the HML loading increasing toward high
+book-to-market and the SMB exposure changing across size groups (the
+Frisch--Waugh reading of \S\ref{alpha-sampling}) --- but treat them as
+diagnostics. Unexpected patterns trigger investigation; they must not be
+overwritten or tuned away, or the ``check'' would merely confirm a
+result it was fitted to.
 
 \begin{verbatim}
 comparison = local.merge(official, on=["date","portfolio"], suffixes=("_local","_official"))
@@ -67,4 +69,33 @@ summary = {
     "n_above_tol": int((comparison["abs_diff"] > tolerance).sum()),
 }
 \end{verbatim}
+
+\textbf{Paper result.} The four layers resolve differently, which is
+exactly why they must be kept separate.
+\begin{itemize}
+\tightlist
+\item
+  \emph{Integrity} passes: the balanced panel of 29{,}825 portfolio-months
+  has no duplicate keys, null required fields, calendar gaps or
+  within-month factor disagreement (Chapter~4).
+\item
+  \emph{Numerical replication} passes: all 25 portfolios' OLS coefficients
+  and HAC standard errors reproduce with \texttt{statsmodels} to a
+  tolerance of $10^{-12}$ (Chapter~6).
+\item
+  \emph{Literature anchor} passes: the $5\times5$ loading and return
+  patterns are economically coherent, and the July 1963--December 1991
+  historical anchor rejects joint zero alpha under HAC/Wald while GRS does
+  not (Chapter~13).
+\item
+  \emph{Source reconciliation} does \emph{not} pass: the fixed local inputs
+  differ from the current official snapshot by up to $1.4167$ percentage
+  points (returns) and $0.34$ percentage points (factors) over their
+  overlap. Because the local acquisition vintage is unverified, this is
+  classified \textsc{not\_comparable}, not \textsc{fail} --- a visible,
+  non-blocking discrepancy whose cause (a plausible official revision)
+  cannot be uniquely attributed without the exact archived release.
+\end{itemize}
+Collapsing these into a single ``validated'' badge would hide the one layer
+that is genuinely open; reporting them separately is the honest summary.
 
