@@ -7,42 +7,47 @@ pooling}\label{multivariate-empirical-bayes-and-partial-pooling}}
 \section{The winner\textquotesingle s curse}\label{the-winners-curse}}
 
 When the largest estimate is selected from 25 noisy estimates, it is
-likely to be unusually high partly because of noise. Partial pooling
-shrinks estimates toward a cross-sectional centre, with the amount of
-shrinkage determined by sampling uncertainty and the estimated
-dispersion of true alphas.
-
-\begin{equation}
-\hat{\alpha } | \alpha  \sim N(\alpha , \hat{V}_{\mathrm{HAC}}), \alpha  \sim N(\mu 1, \tau ^{2}I)
+likely to be unusually high partly because of noise: even if every true
+alpha were equal, the observed maximum would exceed the truth by about
+$\sigma\sqrt{2\ln N}$ (\S\ref{rq-difficulties}). Partial pooling corrects
+this by shrinking estimates toward a cross-sectional centre, with the amount
+of shrinkage set by sampling uncertainty and the estimated dispersion of the
+true alphas; the James--Stein dominance result (\S\ref{prelim-eb})
+guarantees this reduces risk in dimension $N\ge3$. The applied hierarchy
+uses the joint HAC covariance of Chapter~6 as the sampling model:
+\begin{equation}\label{eq:ch8-hierarchy}
+\hat\alpha\mid\alpha \sim N(\alpha,\hat V_{\mathrm{HAC}}),
+\qquad \alpha \sim N(\mu\mathbf{1},\tau^2 I),
 \end{equation}
-
-\begin{equation}
-E(\alpha  | data) = \mu 1 + \tau ^{2}(\hat{V}_{\mathrm{HAC}} + \tau ^{2}I)^{-1}(\hat{\alpha } - \mu 1)
-\end{equation}
-
-\begin{equation}
-Var(\alpha  | data) = \tau ^{2}I - \tau ^{4}(\hat{V}_{\mathrm{HAC}} + \tau ^{2}I)^{-1}
-\end{equation}
-
-With a diagonal V, each portfolio shrinks independently. With the full
-V, a portfolio\textquotesingle s posterior update also reflects how its
-alpha-estimation error co-moves with the others.
+with posterior mean and covariance
+\begin{align}
+\mathbb{E}(\alpha\mid\text{data})
+&= \mu\mathbf{1} + \tau^2(\hat V_{\mathrm{HAC}}+\tau^2 I)^{-1}(\hat\alpha-\mu\mathbf{1}),
+\label{eq:ch8-postmean}\\
+\operatorname{Var}(\alpha\mid\text{data})
+&= \tau^2 I - \tau^4(\hat V_{\mathrm{HAC}}+\tau^2 I)^{-1}.
+\label{eq:ch8-postvar}
+\end{align}
+With a diagonal $V$, each portfolio shrinks independently. With the full
+$V$, a portfolio's posterior update also reflects how its alpha-estimation
+error co-moves with the others --- the multivariate feature that a
+portfolio-by-portfolio shrinkage would miss.
 
 \hypertarget{deriving-the-posterior-by-completing-the-square}{%
 \section{Deriving the posterior by completing the
 square}\label{deriving-the-posterior-by-completing-the-square}}
 
-Write a = \ensuremath{\hat{\alpha }} and let 1 denote the N-vector of ones. Ignoring constants
-that do not depend on \ensuremath{\alpha }, Bayes\textquotesingle{} rule gives:
-
-\begin{equation}
-log p(\alpha |a) = -\frac{1}{2}(a-\alpha ){}^{\prime}V^{-1}(a-\alpha ) - \frac{1}{2}(\alpha -\mu 1){}^{\prime}(\tau ^{-2}I)(\alpha -\mu 1) + C.
+Write $a=\hat\alpha$ and let $\mathbf{1}$ denote the $N$-vector of ones.
+Ignoring constants that do not depend on $\alpha$, Bayes' rule
+(\S\ref{prelim-eb}) gives the log posterior
+\begin{equation}\label{eq:ch8-logpost}
+\log p(\alpha\mid a) = -\tfrac12(a-\alpha)^{\top}V^{-1}(a-\alpha)
+ - \tfrac12(\alpha-\mu\mathbf{1})^{\top}(\tau^{-2}I)(\alpha-\mu\mathbf{1}) + C.
 \end{equation}
-
-Collect the quadratic and linear terms in \ensuremath{\alpha }:
-
-\begin{equation}
-log p(\alpha |a) = -\frac{1}{2} \alpha {}^{\prime}P\alpha  + \alpha {}^{\prime}b + C{}^{\prime}, P = V^{-1}+\tau ^{-2}I, b=V^{-1}a+\tau ^{-2}\mu 1.
+Collecting the quadratic and linear terms in $\alpha$,
+\begin{equation}\label{eq:ch8-precision}
+\log p(\alpha\mid a) = -\tfrac12\alpha^{\top}P\alpha + \alpha^{\top}b + C',
+\qquad P = V^{-1}+\tau^{-2}I,\quad b = V^{-1}a+\tau^{-2}\mu\mathbf{1}.
 \end{equation}
 
 Complete the square with C\textsubscript{post}=P\textsuperscript{\ensuremath{-}1} and
@@ -52,8 +57,9 @@ m\textsubscript{post}=C\textsubscript{post}b:
 -\frac{1}{2}\alpha {}^{\prime}P\alpha +\alpha {}^{\prime}b = -\frac{1}{2}(\alpha -m_{\mathrm{post}}){}^{\prime}P(\alpha -m_{\mathrm{post}}) + \frac{1}{2}m_{\mathrm{post}}{}^{\prime}Pm_{\mathrm{post}}.
 \end{equation}
 
-Therefore \ensuremath{\alpha }\textbar a is multivariate normal. Matrix identities turn the
-precision-form solution into the update form shown above:
+Therefore $\alpha\mid a$ is multivariate normal with mean $m_{\mathrm{post}}$
+and covariance $C_{\mathrm{post}}$. The Woodbury identity \eqref{eq:eb-woodbury}
+turns the precision form into the numerically convenient update form:
 
 \begin{equation}
 m_{\mathrm{post}}=\mu 1+\tau ^{2}(V+\tau ^{2}I)^{-1}(a-\mu 1),
@@ -86,34 +92,31 @@ off-diagonal elements of V couple all updates.
 \section{Estimating \ensuremath{\mu } and \ensuremath{\tau } by marginal
 likelihood}\label{estimating-ux3bc-and-ux3c4-by-marginal-likelihood}}
 
-The marginal model is \ensuremath{\hat{\alpha }} \textasciitilde{} N(\ensuremath{\mu }1, V + \ensuremath{\tau }\textsuperscript{2}I). Profile
-marginal maximum likelihood searches over \ensuremath{\tau } \ensuremath{\geq } 0, solves for \ensuremath{\mu }
-conditional on \ensuremath{\tau }, and selects the pair that maximises the marginal
-likelihood.
-
-Let S(\ensuremath{\tau })=V+\ensuremath{\tau }\textsuperscript{2}I. The marginal log-likelihood is
-
-\begin{equation}
-\ell (\mu ,\tau )=-\frac{1}{2}[N log(2\pi )+log|S(\tau )|+(a-\mu 1){}^{\prime}S(\tau )^{-1}(a-\mu 1)].
+The prior parameters are not known; empirical Bayes estimates them from the
+same cross-section by maximising the \emph{marginal} likelihood
+(\S\ref{prelim-eb}). Integrating $\alpha$ out of \eqref{eq:ch8-hierarchy}
+gives the marginal model $\hat\alpha\sim N(\mu\mathbf{1},\,V+\tau^2 I)$.
+Profile marginal maximum likelihood searches over $\tau\ge0$, solves for
+$\mu$ conditional on $\tau$, and selects the pair that maximises the
+likelihood. Let $S(\tau)=V+\tau^2 I$. The marginal log-likelihood is
+\begin{equation}\label{eq:ch8-marglik}
+\ell(\mu,\tau) = -\tfrac12\bigl[N\log(2\pi)+\log\lvert S(\tau)\rvert
+ + (a-\mu\mathbf{1})^{\top}S(\tau)^{-1}(a-\mu\mathbf{1})\bigr].
 \end{equation}
-
-Differentiating with respect to \ensuremath{\mu } gives
-
-\begin{equation}
-\partial \ell /\partial \mu  = 1{}^{\prime}S^{-1}(a-\mu 1).
+For fixed $\tau$ it is quadratic in $\mu$; differentiating,
+\begin{equation}\label{eq:ch8-dmu}
+\frac{\partial\ell}{\partial\mu} = \mathbf{1}^{\top}S(\tau)^{-1}(a-\mu\mathbf{1}),
 \end{equation}
-
-Setting this to zero yields the generalised least-squares profile
-estimate:
-
-\begin{equation}
-\hat{\mu }(\tau ) = [1{}^{\prime}S(\tau )^{-1}a]/[1{}^{\prime}S(\tau )^{-1}1].
+and setting this to zero yields the generalised-least-squares profile
+estimate
+\begin{equation}\label{eq:ch8-mu}
+\hat\mu(\tau) = \frac{\mathbf{1}^{\top}S(\tau)^{-1}a}{\mathbf{1}^{\top}S(\tau)^{-1}\mathbf{1}} .
 \end{equation}
-
-Substitute \ensuremath{\hat{\mu }}(\ensuremath{\tau }) back into \ensuremath{\ell } and optimise the resulting one-dimensional
-function over \ensuremath{\tau } \ensuremath{\geq } 0. Optimising log \ensuremath{\tau } enforces positivity, but the \ensuremath{\tau } = 0
-boundary must be evaluated explicitly rather than excluded by the
-transformation.
+Substituting $\hat\mu(\tau)$ back into $\ell$ leaves a one-dimensional
+profile in $\tau\ge0$, maximised numerically. Optimising over $\log\tau$
+enforces positivity, but the $\tau=0$ boundary must be evaluated
+explicitly rather than excluded by the transformation, since a genuinely
+zero cross-sectional dispersion (complete pooling) is admissible.
 
 \begin{verbatim}
 def profiled_mu(alpha_hat, V, tau2):
