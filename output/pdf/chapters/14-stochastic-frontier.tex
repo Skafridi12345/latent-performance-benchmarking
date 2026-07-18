@@ -34,11 +34,19 @@ shortfall. For a cost frontier the sign is reversed, \ensuremath{\varepsilon }=v
 inefficiency raises cost. Sign orientation must be specified before
 estimation.
 
-In this portfolio application, \ensuremath{\varepsilon } is a factor-model residual and u is
-merely a candidate one-sided residual component. Calling it managerial
-inefficiency would over-interpret the model: omitted factors, crash
-exposure, nonlinear payoffs, stale prices and changing volatility can
+In this portfolio application, $\varepsilon$ is a factor-model residual and
+$u$ is merely a candidate one-sided residual component. Calling it
+managerial inefficiency would over-interpret the model: omitted factors,
+crash exposure, nonlinear payoffs, stale prices and changing volatility can
 also create negative skewness.
+
+\textbf{Example.} A single month with residual $\varepsilon=-0.02$ is equally
+consistent with an unlucky symmetric draw (a large negative $v$ and
+$u\approx0$) and with a genuine one-sided shortfall (a large $u$, $v\approx0$).
+No single observation can separate the two; only the \emph{shape} of the
+whole residual sample --- its skewness --- carries information about
+$\sigma_u$. That is the entire reason $u$ is treated here as a diagnostic
+rather than a measured quantity.
 
 \hypertarget{component-densities-and-change-of-variables}{%
 \section{Component densities and change of
@@ -58,21 +66,25 @@ f_{v}(v)=\sigma _{v}^{-1}\phi (v/\sigma _{v}),
 \end{equation}
 
 \begin{equation}
-f_{u}(u)=2\sigma _{u}^{-1}\phi (u/\sigma _{u})\cdot 1{u\geq 0}.
+f_{u}(u)=2\sigma _{u}^{-1}\phi (u/\sigma _{u})\cdot \mathbf{1}\{u\geq 0\}.
 \end{equation}
 
-Because \ensuremath{\varepsilon }=v\ensuremath{-}u, we have v=\ensuremath{\varepsilon }+u. The transformation from (v,u) to (\ensuremath{\varepsilon },u) has
-Jacobian determinant one. Independence therefore gives the joint density
-
+Because $\varepsilon=v-u$, we have $v=\varepsilon+u$. The transformation from
+$(v,u)$ to $(\varepsilon,u)$ has Jacobian determinant one. Independence
+therefore gives the joint density
 \begin{equation}
-f_{\varepsilon ,u}(\varepsilon ,u)=f_{v}(\varepsilon +u)f_{u}(u), u\geq 0.
+f_{\varepsilon ,u}(\varepsilon ,u)=f_{v}(\varepsilon +u)\,f_{u}(u), \qquad u\geq 0,
 \end{equation}
-
-Substitution yields
-
+and substitution yields
 \begin{equation}
-f_{\varepsilon ,u}(\varepsilon ,u)= [1/(\pi \sigma _{v}\sigma _{u})] exp{-\frac{1}{2}[(\varepsilon +u)^{2}/\sigma _{v}^{2}+u^{2}/\sigma _{u}^{2}]}\cdot 1{u\geq 0}.
+f_{\varepsilon ,u}(\varepsilon ,u)= \frac{1}{\pi \sigma _{v}\sigma _{u}}\,
+\exp\!\Bigl\{-\tfrac{1}{2}\bigl[(\varepsilon +u)^{2}/\sigma _{v}^{2}+u^{2}/\sigma _{u}^{2}\bigr]\Bigr\}\cdot \mathbf{1}\{u\geq 0\}.
 \end{equation}
+
+\textbf{Example.} With $\sigma_u=0.010$, the one-sided density has its mode at
+the boundary: $f_u(0)=2\sigma_u^{-1}\phi(0)=200\times0.3989=79.8$, and it
+halves by $u=\sigma_u$ where $f_u(0.010)=200\,\phi(1)=200\times0.2420=48.4$.
+The factor of two is the folding constant that makes $\int_0^\infty f_u=1$.
 
 \hypertarget{complete-the-square}{%
 \section{Complete the square}\label{complete-the-square}}
@@ -108,9 +120,17 @@ and the coefficient on u is
 \end{equation}
 
 The remaining constant also agrees because
-\ensuremath{\mu }\textsubscript{*}\textsuperscript{2}/\ensuremath{\sigma }\textsubscript{*}\textsuperscript{2}+\ensuremath{\varepsilon }\textsuperscript{2}/\ensuremath{\sigma }\textsuperscript{2}=\ensuremath{\varepsilon }\textsuperscript{2}/\ensuremath{\sigma }\textsubscript{v}\textsuperscript{2}.
+$\mu_*^{2}/\sigma_*^{2}+\varepsilon^{2}/\sigma^{2}=\varepsilon^{2}/\sigma_v^{2}$.
 This single square-completion step produces both the marginal likelihood
 and the conditional distribution.
+
+\textbf{Example.} With $\sigma_v=0.015$ and $\sigma_u=0.010$ (so
+$\sigma^2=3.25\times10^{-4}$), the coefficient on $u^2$ is
+$1/\sigma_v^2+1/\sigma_u^2 = 4444.4 + 10000 = 14444.4$, which indeed equals
+$\sigma^2/(\sigma_u^2\sigma_v^2)=1/\sigma_*^2$ with $\sigma_*=0.00832$. The
+completion has simply re-expressed the $u$-quadratic as a single normal
+kernel in $u$ centred at $\mu_*$ with precision $1/\sigma_*^2$, times a
+factor that depends on $\varepsilon$ alone.
 
 \hypertarget{deriving-the-composite-error-density}{%
 \section{Deriving the composite-error
@@ -126,24 +146,28 @@ After the square completion, the u-integral is the upper probability of
 a N(\ensuremath{\mu }\textsubscript{*},\ensuremath{\sigma }\textsubscript{*}\textsuperscript{2}) variable:
 
 \begin{equation}
-\int _{0}^{\infty} exp[-(u-\mu _{*})^{2}/(2\sigma _{*}^{2})]du = \sigma _{*}\sqrt{2\pi } \Phi (\mu _{*}/\sigma _{*}).
+\int _{0}^{\infty} \exp\!\bigl[-(u-\mu _{*})^{2}/(2\sigma _{*}^{2})\bigr]\,du = \sigma _{*}\sqrt{2\pi }\; \Phi (\mu _{*}/\sigma _{*}).
 \end{equation}
 
-Since \ensuremath{\sigma }\textsubscript{*}/(\ensuremath{\sigma }\textsubscript{u}\ensuremath{\sigma }\textsubscript{v})=1/\ensuremath{\sigma } and
-
+Since $\sigma_{*}/(\sigma_{u}\sigma_{v})=1/\sigma$ and
 \begin{equation}
 \mu _{*}/\sigma _{*} = -\varepsilon \sigma _{u}/(\sigma \sigma _{v}) = -\lambda \varepsilon /\sigma ,
 \end{equation}
-
 the half-normal SFA composite-error density is
-
-\begin{equation}
-f_{\varepsilon}(\varepsilon ) = (2/\sigma ) \phi (\varepsilon /\sigma ) \Phi (-\lambda \varepsilon /\sigma ).
+\begin{equation}\label{eq:ch14-density}
+f_{\varepsilon}(\varepsilon ) = \frac{2}{\sigma}\,\phi (\varepsilon /\sigma )\,\Phi (-\lambda \varepsilon /\sigma ).
 \end{equation}
+When $\lambda=0$, $\Phi(0)=\tfrac12$ and the density reduces to
+$\sigma^{-1}\phi(\varepsilon/\sigma)$, the ordinary Gaussian error. Positive
+$\lambda$ tilts mass toward negative residuals.
 
-When \ensuremath{\lambda }=0, \ensuremath{\Phi }(0)=1/2 and the density reduces to
-\ensuremath{\sigma }\textsuperscript{\ensuremath{-}1}\ensuremath{\phi }(\ensuremath{\varepsilon }/\ensuremath{\sigma }), the ordinary Gaussian error. Positive \ensuremath{\lambda }
-tilts mass toward negative residuals.
+\textbf{Example.} With $\sigma=0.01803$ and $\lambda=0.667$, evaluate
+\eqref{eq:ch14-density} at $\varepsilon=-0.02$ (so $\varepsilon/\sigma=-1.109$):
+$f_\varepsilon(-0.02)=\tfrac{2}{0.01803}\,\phi(1.109)\,\Phi(0.739)
+=110.9\times0.2155\times0.770=18.4$. The symmetric Gaussian with the same
+$\sigma$ gives only $\sigma^{-1}\phi(1.109)=55.5\times0.2155=12.0$ there:
+the one-sided component places about $50\%$ more mass at this negative
+residual, which is exactly the skewness the boundary test looks for.
 
 \hypertarget{deriving-u-conditional-on-the-observed-residual}{%
 \section{Deriving u conditional on the observed
@@ -167,23 +191,28 @@ Let z\textsubscript{*}=\ensuremath{\mu }\textsubscript{*}/\ensuremath{\sigma }\t
 the inverse Mills ratio r(z)=\ensuremath{\phi }(z)/\ensuremath{\Phi }(z). Standard truncated-normal
 integration gives
 
+\begin{equation}\label{eq:ch14-jlms}
+\mathbb{E}(u\mid\varepsilon )=\mu _{*}+\sigma _{*}\,r(z_{*}),
+\end{equation}
 \begin{equation}
-E(u|\varepsilon )=\mu _{*}+\sigma _{*}r(z_{*}),
+\operatorname{mode}(u\mid\varepsilon )=\max(0,\mu _{*}),
+\end{equation}
+\begin{equation}
+\operatorname{Var}(u\mid\varepsilon )=\sigma _{*}^{2}\bigl[1-z_{*}r(z_{*})-r(z_{*})^{2}\bigr].
 \end{equation}
 
-\begin{equation}
-\operatorname{mode}(u|\varepsilon )=max(0,\mu _{*}),
-\end{equation}
+The first expression is the Jondrow--Lovell--Materov--Schmidt conditional
+mean. A very negative $\varepsilon$ makes $\mu_*$ positive, shifting
+conditional mass toward a larger one-sided shortfall; a positive
+$\varepsilon$ makes $\mu_*$ negative, but truncation at zero keeps
+$\mathbb{E}(u\mid\varepsilon)$ non-negative.
 
-\begin{equation}
-Var(u|\varepsilon )=\sigma _{*}^{2}[1-z_{*}r(z_{*})-r(z_{*})^{2}].
-\end{equation}
-
-The first expression is the Jondrow-Lovell-Materov-Schmidt conditional
-mean. A very negative \ensuremath{\varepsilon } makes \ensuremath{\mu }\textsubscript{*} positive, shifting
-conditional mass toward a larger one-sided shortfall. A positive \ensuremath{\varepsilon } makes
-\ensuremath{\mu }\textsubscript{*} negative, but truncation ensures E(u\textbar \ensuremath{\varepsilon })
-remains non-negative.
+\textbf{Example.} For the residual $\varepsilon=-0.02$ worked in full in
+\S\ref{a-numerical-conditional-shortfall-example} ($\mu_*=0.00615$,
+$\sigma_*=0.00832$, $z_*=0.740$, $r(z_*)=0.394$), the conditional shortfall
+is $\mathbb{E}(u\mid\varepsilon)=0.00615+0.00832\times0.394=0.00943$ with
+mode $\max(0,0.00615)=0.00615$: a negative residual is attributed partly to
+noise and partly to a positive expected shortfall, never to $u$ alone.
 
 \hypertarget{deriving-the-conditional-exponential-score}{%
 \section{Deriving the conditional exponential
@@ -205,27 +234,32 @@ Complete a second square in the exponent:
 
 The remaining integral is another truncated normal probability, giving
 
-\begin{equation}
-E[e^{-cu}|\varepsilon ] = exp(-c\mu _{*}+c^{2}\sigma _{*}^{2}/2) \cdot  \Phi [(\mu _{*}-c\sigma _{*}^{2})/\sigma _{*}] / \Phi (\mu _{*}/\sigma _{*}).
+\begin{equation}\label{eq:ch14-mgf}
+\mathbb{E}[e^{-cu}\mid\varepsilon ] = \exp\!\bigl(-c\mu _{*}+\tfrac12 c^{2}\sigma _{*}^{2}\bigr) \cdot  \frac{\Phi [(\mu _{*}-c\sigma _{*}^{2})/\sigma _{*}]}{\Phi (\mu _{*}/\sigma _{*})}.
 \end{equation}
 
-For classical log-output efficiency set c=1. For a return series, use
-c=1/\ensuremath{\sigma } and define the scale-free diagnostic score
-
-\begin{equation}
-TE_{scale-free}(\varepsilon )=E[exp(-u/\sigma )|\varepsilon ]
+For classical log-output efficiency set $c=1$. For a return series, use
+$c=1/\sigma$ and define the scale-free diagnostic score
+\begin{equation}\label{eq:ch14-te}
+\mathrm{TE}_{\text{scale-free}}(\varepsilon )=\mathbb{E}\bigl[\exp(-u/\sigma )\mid\varepsilon \bigr]
+= \exp\!\Bigl[-\tfrac{\mu _{*}}{\sigma } + \tfrac12\Bigl(\tfrac{\sigma _{*}}{\sigma }\Bigr)^{2}\Bigr] \cdot  \frac{\Phi [\mu _{*}/\sigma _{*}-\sigma _{*}/\sigma ]}{\Phi (\mu _{*}/\sigma _{*})}.
 \end{equation}
 
-\begin{equation}
-= exp[-\mu _{*}/\sigma  + \frac{1}{2}(\sigma _{*}/\sigma )^{2}] \cdot  \Phi [\mu _{*}/\sigma _{*}-\sigma _{*}/\sigma ] / \Phi (\mu _{*}/\sigma _{*}).
-\end{equation}
-
-Why is this invariant? If returns are multiplied by a positive constant
-a---for example, decimals to percentages---then \ensuremath{\varepsilon }, \ensuremath{\sigma }, \ensuremath{\mu }\textsubscript{*}
-and \ensuremath{\sigma }\textsubscript{*} all multiply by a. Every ratio in the last
-expression is unchanged. In contrast, exp(\ensuremath{-}u) changes under a unit
-conversion and is unsuitable for ranking return series reported on
+Why is this invariant? If returns are multiplied by a positive constant $a$
+--- for example, converting decimals to percentages --- then $\varepsilon$,
+$\sigma$, $\mu_*$ and $\sigma_*$ all multiply by $a$, so every ratio in
+\eqref{eq:ch14-te} is unchanged. In contrast, $\exp(-u)$ changes under a
+unit conversion and is unsuitable for ranking return series reported on
 different scales.
+
+\textbf{Example.} For the running case ($\mu_*/\sigma=0.341$,
+$\sigma_*/\sigma=0.462$, $\mu_*/\sigma_*=0.740$),
+\eqref{eq:ch14-te} gives $\mathrm{TE}=\exp[-0.341+0.107]\times\Phi(0.278)/\Phi(0.740)
+=0.791\times0.610/0.770=0.626$. Rescaling all returns by $100$ multiplies
+$\mu_*,\sigma_*,\sigma$ by $100$, leaves all three ratios fixed, and returns
+the identical $0.626$ --- whereas the raw $\exp(-\mathbb{E}(u\mid\varepsilon))
+=\exp(-0.00943)=0.991$ would jump to $\exp(-0.943)=0.389$ under the same
+rescaling.
 
 \hypertarget{a-numerical-conditional-shortfall-example}{%
 \section{A numerical conditional-shortfall
@@ -257,13 +291,20 @@ For observation t, define z\textsubscript{t}=\ensuremath{\varepsilon }\textsubsc
 h\textsubscript{t}=\ensuremath{-}\ensuremath{\lambda }z\textsubscript{t}. The log-likelihood contribution
 is
 
-\begin{equation}
-\ell _{t}(\beta ,\sigma ,\lambda )=log 2-log \sigma +log \phi (z_{t})+log \Phi (h_{t}).
+\begin{equation}\label{eq:ch14-loglik}
+\ell _{t}(\beta ,\sigma ,\lambda )=\log 2-\log \sigma +\log \phi (z_{t})+\log \Phi (h_{t}).
 \end{equation}
 
-The sample log-likelihood is
-\ensuremath{\ell }=\ensuremath{\sum }\textsubscript{t=1}\textsuperscript{T}\ensuremath{\ell }\textsubscript{t}. Let
-R(h)=\ensuremath{\phi }(h)/\ensuremath{\Phi }(h). Holding \ensuremath{\lambda } fixed, differentiation gives
+\textbf{Example.} For $\varepsilon_t=-0.02$, $\sigma=0.01803$ and
+$\lambda=0.667$: $z_t=-1.109$ and $h_t=-\lambda z_t=0.740$, so
+$\ell_t=\log2-\log(0.01803)+\log\phi(1.109)+\log\Phi(0.740)
+=0.693+4.017-1.535-0.261=2.914$. The third term rewards a small
+standardised residual and the fourth rewards residuals on the
+one-sided ($\varepsilon<0$) side of the frontier.
+
+The sample log-likelihood is $\ell=\sum_{t=1}^{T}\ell_t$. Let
+$R(h)=\phi(h)/\Phi(h)$ be the inverse Mills ratio. Holding $\lambda$ fixed,
+differentiation gives
 
 \begin{equation}
 \partial \ell _{t}/\partial \varepsilon _{t} = -[z_{t}+\lambda R(h_{t})]/\sigma .
@@ -357,31 +398,44 @@ LR \Rightarrow  \frac{1}{2}\chi ^{2}_{0} + \frac{1}{2}\chi ^{2}_{1},
 
 where \ensuremath{\chi }\textsuperscript{2}\textsubscript{0} is a point mass at zero. Therefore
 
-\begin{equation}
-p=1 \text{ if } LR=0; p=\frac{1}{2}\cdot P(\chi ^{2}_{1}\geq LR) \text{ if } LR>0.
+\begin{equation}\label{eq:ch14-boundaryp}
+p=1 \ \text{if } LR=0; \qquad p=\tfrac{1}{2}\,\Pr(\chi ^{2}_{1}\geq LR) \ \text{if } LR>0.
 \end{equation}
 
-There are 25 portfolio-specific SFA boundary tests, so apply BH FDR to
-those 25 p-values as one prespecified family. Only portfolios with
-q\ensuremath{\leq }0.05 receive an \texttt{sfa\_rank}; all others are explicitly marked
-unsupported rather than quietly ordered.
+\textbf{Example.} A portfolio with $LR=5.0$ has boundary $p$-value
+$p=\tfrac12\Pr(\chi^2_1\ge5.0)=\tfrac12(0.0253)=0.0127$. The naive interior
+$\chi^2_1$ reference would report $0.0253$ --- exactly twice too large --- so
+ignoring the boundary would double the apparent $p$-value and understate the
+evidence against the Gaussian null.
+
+There are 25 portfolio-specific SFA boundary tests, so BH FDR is applied to
+those 25 $p$-values as one prespecified family (\S\ref{prelim-fdr}). Only
+portfolios with $q\le0.05$ receive an \texttt{sfa\_rank}; all others are
+explicitly marked unsupported rather than quietly ordered.
 
 \hypertarget{identification-why-shape-not-merely-location-matters}{%
 \section{Identification: why shape, not merely location,
 matters}\label{identification-why-shape-not-merely-location-matters}}
 
-For the half-normal distribution, E(u)=\ensuremath{\sigma }\textsubscript{u}\ensuremath{\sqrt{2/\pi}}, so
-
-\begin{equation}
-E(\varepsilon )=E(v-u)=-\sigma _{u}\sqrt{2/\pi }.
+For the half-normal distribution, $\mathbb{E}(u)=\sigma_u\sqrt{2/\pi}$, so
+\begin{equation}\label{eq:ch14-meanshift}
+\mathbb{E}(\varepsilon )=\mathbb{E}(v-u)=-\sigma _{u}\sqrt{2/\pi }.
 \end{equation}
 
 A regression intercept and a non-zero mean shortfall can both explain a
 constant downward location shift. If the model contains an unrestricted
-intercept, separating that intercept from E(u) relies primarily on
-distributional shape---especially skewness---not on the mean alone. That
-is weak evidence when residuals are non-normal, serially dependent and
+intercept, separating that intercept from $\mathbb{E}(u)$ relies primarily
+on distributional shape --- especially skewness --- not on the mean alone.
+That is weak evidence when residuals are non-normal, serially dependent and
 ARCH.
+
+\textbf{Example.} With $\sigma_u=0.010$, the shortfall shifts the mean
+residual by $\mathbb{E}(\varepsilon)=-0.010\sqrt{2/\pi}=-0.010\times0.7979
+=-0.00798$, about $-0.8\%$ per month. An ordinary regression with a free
+intercept of $-0.008$ and \emph{no} asymmetry ($\sigma_u=0$) produces the
+identical location shift. Only the skewness of the residuals distinguishes
+the two data-generating processes; the mean alone cannot, which is why the
+one-sided parameter is only weakly identified.
 
 More formally, identification asks whether distinct parameter vectors
 generate distinct observable distributions. If a flexible location term,
