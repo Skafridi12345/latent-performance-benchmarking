@@ -21,30 +21,44 @@ ARCH-LM (lag 12) & No conditional heteroskedasticity & Residual variance
 is time-varying \\
 \end{longtable}
 
-For residuals e\textsubscript{1},\ldots,e\textsubscript{T}, let S denote
-sample skewness and K sample kurtosis. The Jarque-Bera statistic is
+Each test compares a feature of the residuals to a null and, under that
+null, has a $\chi^2$ reference obtained from asymptotically normal
+statistics (\S\ref{prelim-tests}).
 
-\begin{equation}
-JB = T/6 \cdot  [S^{2} + (K-3)^{2}/4] \approx  \chi ^{2}_{2} \quad \text{under an IID normal null}.
+\textbf{Jarque--Bera (normality).} For residuals $e_1,\dots,e_T$, let $S$ be
+the sample skewness and $K$ the sample kurtosis. Under IID normality the
+standardised third and fourth moments are asymptotically independent
+normals, $\sqrt{T}\,S\xrightarrow{d}N(0,6)$ and
+$\sqrt{T}\,(K-3)\xrightarrow{d}N(0,24)$, so their squared standardised
+values sum to a chi-square with two degrees of freedom:
+\begin{equation}\label{eq:ch13-jb}
+JB = \frac{T}{6}\Bigl[S^2 + \tfrac14(K-3)^2\Bigr]
+\ \xrightarrow{d}\ \chi^2_2 \quad\text{under an IID normal null}.
 \end{equation}
 
-Let \ensuremath{\hat{\rho }}\textsubscript{\ensuremath{\ell }} be the residual autocorrelation at lag \ensuremath{\ell }. The
-Ljung-Box portmanteau statistic through lag m is
-
-\begin{equation}
-Q(m)=T(T+2) \sum _{\ell =1}^{m} \hat{\rho }_{\ell}^{2}/(T-\ell ) \approx  \chi ^{2}_{m}.
+\textbf{Ljung--Box (serial correlation).} Let $\hat\rho_\ell$ be the
+residual autocorrelation at lag $\ell$. Under the no-autocorrelation null,
+$\sqrt{T}\,\hat\rho_\ell\xrightarrow{d}N(0,1)$ and the $\hat\rho_\ell$ are
+asymptotically independent across lags, so a weighted sum of their squares
+is chi-square with $m$ degrees of freedom:
+\begin{equation}\label{eq:ch13-lb}
+Q(m) = T(T+2)\sum_{\ell=1}^{m}\frac{\hat\rho_\ell^{2}}{T-\ell}
+\ \xrightarrow{d}\ \chi^2_m .
 \end{equation}
+The factor $T(T+2)/(T-\ell)$ is the Ljung--Box finite-sample refinement of
+the simpler Box--Pierce statistic $T\sum\hat\rho_\ell^2$.
 
-For ARCH-LM, run the auxiliary regression
-
-\begin{equation}
-\hat{e}_{t}^{2} = c + \gamma _{1}\hat{e}_{t-1}^{2} + \cdots  + \gamma _{m}\hat{e}_{t-m}^{2} + \eta _{t}.
+\textbf{ARCH-LM (conditional heteroskedasticity).} This is a
+Lagrange-multiplier test built from the auxiliary regression of squared
+residuals on their own lags,
+\begin{equation}\label{eq:ch13-arch}
+\hat e_t^{2} = c + \gamma_1\hat e_{t-1}^{2} + \cdots + \gamma_m\hat e_{t-m}^{2} + \eta_t .
 \end{equation}
-
-Under H\textsubscript{0}:\ensuremath{\gamma }\textsubscript{1}=\ensuremath{\cdot }\ensuremath{\cdot }\ensuremath{\cdot }=\ensuremath{\gamma }\textsubscript{m}=0,
-the statistic (T\ensuremath{-}m)R\textsuperscript{2} is asymptotically \ensuremath{\chi }\textsuperscript{2}\textsubscript{m}. Rejection
-indicates predictable conditional variance, not necessarily incorrect
-conditional mean.
+Under $H_0:\gamma_1=\cdots=\gamma_m=0$ (no ARCH) the auxiliary $R^2$ is
+small, and $(T-m)R^2\xrightarrow{d}\chi^2_m$. A large statistic means past
+squared residuals predict the current one --- volatility clustering ---
+which signals a time-varying conditional variance, not necessarily an
+incorrect conditional mean.
 
 \begin{verbatim}
 from statsmodels.stats.diagnostic import acorr_ljungbox, het_arch
@@ -85,30 +99,86 @@ boundary/FDR safeguards. \\
 \hypertarget{ff3-versus-ff5}{%
 \section{FF3 versus FF5}\label{ff3-versus-ff5}}
 
-FF5 adds profitability (RMW) and investment (CMA). Compare models only
-on their common sample. Otherwise, ``model difference'' is confounded
-with ``sample difference.''
-
+Alpha is defined only relative to the chosen factors, so enlarging the
+benchmark is a genuine source of model risk. FF5 adds profitability (RMW)
+and investment (CMA) to FF3. Because each loading is a \emph{partial} slope
+(the Frisch--Waugh reading of \S\ref{alpha-sampling}), adding factors
+re-partials every coefficient and therefore redefines the intercept: a
+portfolio that loads on a priced dimension absent from FF3 shows an FF3
+alpha that can shrink or reverse under FF5 (\S\ref{rq-difficulties}). The
+two models must be compared on their \emph{common} sample, otherwise a
+``model difference'' is confounded with a ``sample difference.''
 \begin{itemize}
 \tightlist
 \item
-  Fit both models on July 1963-November 2025.
+  Fit both models on the prespecified common sample, July 1963--November
+  2025.
 \item
-  Compare posterior ranks, score correlations, FDR discoveries and joint
-  tests.
+  Compare posterior ranks, score correlations, FDR discoveries and the
+  joint tests.
 \item
   Report the largest absolute rank move and the affected portfolio.
 \end{itemize}
 
-\textbf{Paper result.} FF3 and FF5 ranks correlate 0.875, yet ME5 BM2
-moves from rank 9 to rank 20. Benchmark choice is economically
-meaningful even when overall rank correlation looks high.
+\textbf{Paper result.} FF3 and FF5 posterior ranks correlate $0.875$, yet
+\texttt{ME5\ BM2} moves from rank $9$ under FF3 to rank $20$ under FF5 --- an
+eleven-position change. FDR-supported raw alphas fall from five (FF3) to
+three (FF5). The joint HAC/Wald test rejects zero alpha under both models
+(FF3 $p=1.6\times10^{-8}$, FF5 $p=6.7\times10^{-7}$), so the \emph{presence}
+of mispricing is robust while its \emph{cross-sectional pattern} is not:
+benchmark choice is economically meaningful even when the overall rank
+correlation looks high.
 
 \hypertarget{window-length-sensitivity}{%
 \section{Window-length sensitivity}\label{window-length-sensitivity}}
 
-Compare 60-, 120- and 180-month estimates on aligned dates. Rank
-correlation measures ordering agreement; Jaccard measures top/bottom
-membership agreement. Window length is a modelling decision, not a
-neutral knob.
+The rolling window length sets both the sampling noise and the economic
+period being averaged, so it is a modelling decision, not a neutral knob.
+On aligned dates, ordering agreement between two window lengths is measured
+by the Spearman rank correlation and top/bottom-quintile membership
+agreement by the Jaccard overlap $J(A,B)=\lvert A\cap B\rvert/\lvert A\cup B\rvert$
+(Chapter~10).
+
+\begin{longtable}[]{@{}p{0.22\textwidth}p{0.17\textwidth}p{0.17\textwidth}p{0.17\textwidth}p{0.17\textwidth}@{}}
+\toprule\noalign{}
+Windows & Rank corr & Score corr & Top Jaccard & Bottom Jaccard \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+60 vs.\ 120 months & 0.717 & 0.746 & 0.393 & 0.367 \\
+60 vs.\ 180 months & 0.546 & 0.580 & 0.325 & 0.294 \\
+120 vs.\ 180 months & 0.782 & 0.802 & 0.515 & 0.448 \\
+\end{longtable}
+
+Rank correlations are positive but well below one, and top-quintile
+membership overlap can fall below $0.40$: two defensible window lengths can
+select materially different ``best'' portfolios. This disagreement is
+genuine temporal instability, not merely a tuning inconvenience.
+
+\hypertarget{historical-anchor}{%
+\section{The historical anchor and the GRS/HAC divergence}\label{historical-anchor}}
+
+A sharp illustration of model risk comes from the prespecified
+1963--1991 anchor. There the dependence-robust HAC/Wald test rejects joint
+zero alpha ($\mathrm{stat}=56.5$, $p=3.2\times10^{-4}$), while the classical
+GRS test does \emph{not} reject at 5\% ($\mathrm{stat}=1.44$, $p=0.082$).
+The two disagree precisely because GRS assumes the IID-normal residuals that
+the diagnostics of this chapter reject; once those assumptions fail, the
+exact-$F$ argument (\S\ref{prelim-tests}) loses its finite-sample guarantee
+and can understate the evidence. The divergence is therefore not a
+contradiction but a direct demonstration of why the robust test is primary.
+
+\hypertarget{model-risk-summary}{%
+\section{Model risk, summarised}\label{model-risk-summary}}
+
+The residual diagnostics, the FF3/FF5 comparison, the window-length
+sensitivity and the historical anchor point to one lesson: the linear,
+constant-beta, FF3 specification is a useful approximation, not a literal
+truth. HAC inference and the block bootstrap make the \emph{inference}
+robust to the dependence they model, but they cannot repair omitted priced
+factors, nonlinear payoffs, time-varying betas, or an incomplete benchmark.
+Every headline claim in the study is therefore stated as
+benchmark-relative and paired with the sensitivity analysis that exposes
+its model risk rather than concealing it.
 
