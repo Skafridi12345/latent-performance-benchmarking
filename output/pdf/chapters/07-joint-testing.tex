@@ -6,12 +6,27 @@ control}\label{joint-testing-and-false-discovery-control}}
 \hypertarget{the-joint-hacwald-test}{%
 \section{The joint HAC/Wald test}\label{the-joint-hacwald-test}}
 
-The null hypothesis is \emph{H\textsubscript{0}: \ensuremath{\alpha } = 0} for all 25
-portfolios. The dependence-robust Wald statistic is:
-
-\begin{equation}
-W = \hat{\alpha }{}^{\prime}\hat{V}_{\mathrm{HAC}}^{-1}\hat{\alpha } \approx  \chi ^{2}_{25} \quad \text{under }H_{0}
+The null hypothesis is $H_0:\alpha=0$ for all 25 portfolios --- the joint
+claim that the benchmark leaves \emph{no} portfolio with a non-zero mean
+residual. The dependence-robust Wald statistic is
+\begin{equation}\label{eq:ch7-wald}
+W = \hat\alpha^{\top}\hat V_{\mathrm{HAC}}^{-1}\hat\alpha
+\ \xrightarrow{d}\ \chi^2_{25}\quad\text{under }H_0 .
 \end{equation}
+
+\textbf{Why chi-square.} The result is the whitening argument of
+\S\ref{prelim-mvn} applied to the asymptotically normal alpha vector. Under
+$H_0$ and the asymptotics of \S\ref{prelim-asymp}, $\hat\alpha$ is
+approximately $N(0,V_{\mathrm{HAC}})$, so the standardised vector
+$z=\hat V_{\mathrm{HAC}}^{-1/2}\hat\alpha$ is approximately $N(0,I_{25})$ and
+$W=z^{\top}z=\sum_{i=1}^{25}z_i^2$ is the squared norm of a standard normal
+vector --- a $\chi^2$ with $25$ degrees of freedom \eqref{eq:chisq},
+\eqref{eq:wald}. Crucially, nothing beyond a consistent
+$\hat V_{\mathrm{HAC}}$ is required: no IID assumption, no normal residuals,
+no constant covariance. That is what makes it the \emph{primary} joint
+test, robust to exactly the dependence documented in Chapter~6. In the
+study $W=93.9$ with $p=6.4\times10^{-10}$, so the joint zero-alpha
+hypothesis is decisively rejected.
 
 Use a linear solve rather than forming an explicit inverse:
 
@@ -40,39 +55,55 @@ relative to residual risk. The factor term discounts this evidence when
 the factors themselves have a large sample mean relative to their
 covariance.
 
-Why the F distribution? Under a correctly specified linear factor model
-with residual vectors that are independent through time, jointly
-Gaussian, homoskedastic and independent of factor realisations, the
-appropriately scaled alpha quadratic form can be written as a ratio of
-independent quadratic forms. That ratio has an exact
-F\textsubscript{N,T\ensuremath{-}N\ensuremath{-}K} distribution. Serial dependence, conditional
-heteroskedasticity or non-normality breaks the exact finite-sample
-argument.
+\textbf{Why the $F$ distribution.} The GRS statistic is a scaled Hotelling
+$T^2$. Under a correctly specified factor model with residuals that are IID
+across months, jointly Gaussian, homoskedastic, and independent of the
+factors, the numerator quadratic form
+$\hat\alpha^{\top}\hat\Sigma_\varepsilon^{-1}\hat\alpha$ and the factor-mean
+term in the denominator are \emph{independent} quadratic forms in Gaussian
+vectors --- a $\chi^2_N$ scaled by a Wishart-distributed covariance. Their
+ratio, scaled by $(T-N-K)/N$, is therefore exactly $F_{N,T-N-K}$ in finite
+samples \eqref{eq:grs}. The denominator $1+\bar f^{\top}\hat\Omega_f^{-1}\bar f$
+discounts the alpha evidence when the factors themselves carry a large
+mean-variance signal (a high squared Sharpe ratio), which is the
+efficiency-test interpretation: $H_0$ is equivalent to the factors spanning
+the tangency portfolio. In the study $\mathrm{GRS}=3.28$ with
+$p=1.2\times10^{-7}$, so it also rejects.
 
 \textbf{Assumption ledger.} GRS is not ``wrong''; it answers a sharper
-question under stronger assumptions. In this study, residual diagnostics
-reject several of those assumptions, so GRS is a conventional
-sensitivity check and the HAC/Wald statistic is the primary joint
-inference.
+question --- exact finite-sample, not merely asymptotic --- under stronger
+assumptions. But those assumptions are exactly the ones the diagnostics of
+Chapter~13 reject: serial dependence, conditional heteroskedasticity, and
+non-normality all break the exact-$F$ argument. GRS is therefore a
+conventional sensitivity check, and the dependence-robust HAC/Wald statistic
+\eqref{eq:ch7-wald} is the primary joint inference.
 
 \hypertarget{why-25-individual-p-values-need-correction}{%
 \section{Why 25 individual p-values need
 correction}\label{why-25-individual-p-values-need-correction}}
 
-If 25 true null hypotheses are each tested at 5\%, false positives
-become likely. The Benjamini-Hochberg (BH) procedure controls the
-expected proportion of false discoveries among the rejected hypotheses
-under its stated dependence conditions.
-
+If $m=25$ true nulls are each tested at level $0.05$, the expected number
+of false positives is $m\times0.05=1.25$ and the probability of at least
+one is $1-(1-0.05)^{25}\approx0.72$: a ``significant'' alpha found this way
+is uninformative on its own. Rather than control the probability of
+\emph{any} false rejection (the family-wise error rate, which Bonferroni
+guards conservatively), the Benjamini--Hochberg (BH) procedure controls the
+\emph{false-discovery rate} --- the expected proportion of false rejections
+among all rejections,
+$\mathrm{FDR}=\mathbb{E}[V/\max(R,1)]$ (\S\ref{prelim-fdr}). The procedure
+is:
 \begin{enumerate}
 \tightlist
 \item
-  Sort p-values: p\textsubscript{(1)} \ensuremath{\leq } \ldots{} \ensuremath{\leq } p\textsubscript{(m)}.
+  Sort the $p$-values $p_{(1)}\le\dots\le p_{(m)}$.
 \item
-  Find the largest k satisfying p\textsubscript{(k)} \ensuremath{\leq } kq/m.
+  Find the largest $k$ satisfying $p_{(k)}\le kq/m$.
 \item
-  Reject hypotheses 1 through k.
+  Reject the hypotheses with the $k$ smallest $p$-values.
 \end{enumerate}
+Under independence or positive dependence (PRDS) this guarantees
+$\mathrm{FDR}\le(m_0/m)q\le q$, where $m_0$ is the unknown number of true
+nulls \eqref{eq:bh}.
 
 \hypertarget{a-complete-bh-example}{%
 \section{A complete BH example}\label{a-complete-bh-example}}
@@ -95,13 +126,15 @@ Order i & p\textsubscript{(i)} & i q/m & Passes? \\
 5 & 0.230 & 0.050 & No \\
 \end{longtable}
 
-The largest passing order is k = 4, so the first four nulls are
-rejected. Notice the step-up logic: one does not stop at the first local
-failure. The adjusted q-values follow from
-
-\begin{equation}
-q_{(i)} = \min_{j\geq i}{m p_{(j)}/j}, \quad \text{truncated at 1 and mapped back to the original order}.
+The largest passing order is $k=4$, so the first four nulls are rejected.
+Notice the step-up logic: one does not stop at the first local failure
+(order 5 fails, but that does not un-reject orders 1--4). The reported
+adjusted $q$-values are the monotone reverse cumulative minimum
+\begin{equation}\label{eq:ch7-qval}
+q_{(i)} = \min_{j\ge i}\ \min\!\Bigl(1,\ \frac{m\,p_{(j)}}{j}\Bigr),
 \end{equation}
+which is non-decreasing in $i$ and is mapped back to the original testing
+order; rejecting when $q_i\le q$ reproduces the step-up rule exactly.
 
 BH controls FDR under independence and under broad positive-dependence
 conditions. Portfolio tests are correlated, so the full dependence
