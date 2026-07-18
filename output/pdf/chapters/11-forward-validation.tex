@@ -3,68 +3,80 @@
 \chapter{Strictly forward
 validation}\label{strictly-forward-validation}}
 
-Design an evaluation where every model choice and estimate used for
-ranking is fixed before the future observations are touched.
+This chapter designs an evaluation in which every model choice and estimate
+used to form the ranking is fixed \emph{before} any future observation is
+touched --- the discipline that separates description from prediction
+(\S\ref{rq-estimand}).
 
 \hypertarget{timeline}{%
 \section{Timeline}\label{timeline}}
 
-120-month training data
-
-Fit betas, V, \ensuremath{\mu }, \ensuremath{\tau }
-
-Freeze scores and ranks
-
-Observe next 12 months
-
-Evaluate future alpha
-
-\begin{equation}
-A^{+}_{i} = mean_{\mathrm{future\,t}}[ y_{\mathrm{it}} - \hat{\beta }{}^{\prime}_{i,train}f_{t} ]
+At each cutoff $c$ the procedure is:
+\begin{enumerate}
+\tightlist
+\item
+  take the 120-month training window $\{c-119,\dots,c\}$;
+\item
+  fit the betas, the joint HAC covariance $V$, and the empirical-Bayes
+  hyperparameters $\mu,\tau$ on that window;
+\item
+  freeze the posterior scores and the ranking;
+\item
+  observe the next 12 months $\{c+1,\dots,c+12\}$; and
+\item
+  evaluate each portfolio's realised future alpha using the \emph{frozen}
+  training betas,
+\end{enumerate}
+\begin{equation}\label{eq:ch11-fwdalpha}
+A_i^{+} = \frac{1}{12}\sum_{t=c+1}^{c+12}\bigl(y_{it}-\hat\beta_{i,\text{train}}^{\top} f_t\bigr).
 \end{equation}
+The beta is frozen deliberately: re-estimating it on the evaluation year
+would let future data redefine the very target being evaluated.
 
-The beta is frozen. Re-estimating beta on the evaluation year would
-allow future data to redefine the target being evaluated.
-
-At cutoff c, let the training set be \{c\ensuremath{-}119,\ldots,c\} and the
-evaluation set be \{c+1,\ldots,c+12\}. The ranking function
-R\textsubscript{c} must be measurable with respect to information
-available at c. In probability notation, if \ensuremath{\mathcal{F}}\textsubscript{c} is the
-information set at the cutoff, then
-
-\begin{equation}
-R_{c} \in  \mathcal{F}_{c}, while A^{+}_{c} \in  \mathcal{F}_{c+12} \setminus \mathcal{F}_{c}.
+\textbf{The formal meaning of ``look-ahead free.''} Let $\mathcal{F}_c$ be
+the information available at the cutoff. The ranking $R_c$ must be
+$\mathcal{F}_c$-measurable, while the outcome is realised strictly later:
+\begin{equation}\label{eq:ch11-measurable}
+R_c \in \mathcal{F}_c,
+\qquad
+A_c^{+} \in \mathcal{F}_{c+12}\setminus\mathcal{F}_c .
 \end{equation}
-
-This is the formal meaning of ``look-ahead free.'' Every estimated beta,
-covariance, hyperparameter, scaling rule, tie-breaking rule and
-portfolio assignment must be determined by \ensuremath{\mathcal{F}}\textsubscript{c}.
+Every estimated beta, covariance, hyperparameter, scaling rule,
+tie-breaking rule and portfolio assignment must be determined by
+$\mathcal{F}_c$; the leakage assertions below enforce exactly this in code.
 
 \hypertarget{evaluation-statistics}{%
 \section{Evaluation statistics}\label{evaluation-statistics}}
 
-\begin{enumerate}
-\tightlist
-\item
-  Spearman correlation between training scores and future alpha across
-  the 25 portfolios.
-\item
-  Average future alpha of the training top quintile minus the average
-  future alpha of the training bottom quintile.
-\end{enumerate}
-
-For correlations, transform each annual Spearman value using z =
-atanh(\ensuremath{\rho }), aggregate z with HAC inference, then transform back with tanh.
-This prevents averaging correlations on an inappropriate raw scale.
-
-\begin{equation}
-z_{w}=atanh(\rho _{w})=\frac{1}{2}log[(1+\rho _{w})/(1-\rho _{w})], \bar{\rho }=tanh(\bar{z}).
+Two statistics summarise each evaluation window $w$. The first is the
+Spearman rank correlation (\S\ref{prelim-rank}) between the 25 training
+scores and the 25 future alphas $A_i^{+}$. The second is the average future
+alpha of the training top quintile minus that of the training bottom
+quintile,
+\begin{equation}\label{eq:ch11-spread}
+D_w = 12\times10{,}000\times\Bigl(\tfrac15\!\sum_{i\in\text{top}_w} A_i^{+}
+ - \tfrac15\!\sum_{i\in\text{bottom}_w} A_i^{+}\Bigr)\quad\text{bps/year},
 \end{equation}
+where $\text{top}_w$ and $\text{bottom}_w$ are the five highest- and
+lowest-ranked portfolios at cutoff $w$; averaging within quintiles reduces
+dependence on any single extreme.
 
-If z\textsubscript{w} is serially dependent across evaluation windows,
-estimate the long-run variance of its mean with HAC. A 95\% interval on
-the z scale is \ensuremath{\bar{z}} \ensuremath{\pm } 1.96\ensuremath{\cdot }SE\textsubscript{HAC}(\ensuremath{\bar{z}}), with both endpoints
-mapped back through tanh.
+Correlations are bounded, so their sampling distribution is skewed near
+$\pm1$ and they must not be averaged on the raw scale. Following
+\S\ref{prelim-rank}, each annual correlation is put on the
+variance-stabilising \emph{Fisher} scale, averaged there with HAC
+inference, and mapped back:
+\begin{equation}\label{eq:ch11-fisher}
+z_w = \operatorname{atanh}(\rho_w) = \tfrac12\log\frac{1+\rho_w}{1-\rho_w},
+\qquad \bar\rho = \tanh(\bar z).
+\end{equation}
+Because the $z_w$ are serially dependent across (annual, non-overlapping)
+windows, the long-run variance of their mean is estimated with a four-lag
+HAC (\S\ref{prelim-hac}); the 95\% interval on the $z$ scale is
+$\bar z \pm 1.96\,\mathrm{SE}_{\mathrm{HAC}}(\bar z)$, with both endpoints
+mapped back through $\tanh$. The spread $D_w$ is aggregated the same way,
+without transformation. This annual mean-with-HAC construction is exactly
+the equal-predictive-accuracy machinery formalised in Chapter~12.
 
 \hypertarget{leakage-assertions}{%
 \section{Leakage assertions}\label{leakage-assertions}}
