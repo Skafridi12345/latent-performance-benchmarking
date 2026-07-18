@@ -50,43 +50,75 @@ Collecting the quadratic and linear terms in $\alpha$,
 \qquad P = V^{-1}+\tau^{-2}I,\quad b = V^{-1}a+\tau^{-2}\mu\mathbf{1}.
 \end{equation}
 
-Complete the square with C\textsubscript{post}=P\textsuperscript{\ensuremath{-}1} and
-m\textsubscript{post}=C\textsubscript{post}b:
-
-\begin{equation}
--\frac{1}{2}\alpha {}^{\prime}P\alpha +\alpha {}^{\prime}b = -\frac{1}{2}(\alpha -m_{\mathrm{post}}){}^{\prime}P(\alpha -m_{\mathrm{post}}) + \frac{1}{2}m_{\mathrm{post}}{}^{\prime}Pm_{\mathrm{post}}.
+Completing the square with $C_{\mathrm{post}}=P^{-1}$ and
+$m_{\mathrm{post}}=C_{\mathrm{post}}\,b$ gives
+\begin{equation}\label{eq:ch8-complete}
+-\tfrac12\alpha^{\top}P\alpha+\alpha^{\top}b
+= -\tfrac12(\alpha-m_{\mathrm{post}})^{\top}P(\alpha-m_{\mathrm{post}})
+ + \tfrac12 m_{\mathrm{post}}^{\top}P\,m_{\mathrm{post}},
 \end{equation}
+so $\alpha\mid a\sim N(m_{\mathrm{post}},C_{\mathrm{post}})$ with precision-form
+solution $C_{\mathrm{post}}=(V^{-1}+\tau^{-2}I)^{-1}$ and
+$m_{\mathrm{post}}=C_{\mathrm{post}}(V^{-1}a+\tau^{-2}\mu\mathbf{1})$.
 
-Therefore $\alpha\mid a$ is multivariate normal with mean $m_{\mathrm{post}}$
-and covariance $C_{\mathrm{post}}$. The Woodbury identity \eqref{eq:eb-woodbury}
-turns the precision form into the numerically convenient update form:
-
-\begin{equation}
-m_{\mathrm{post}}=\mu 1+\tau ^{2}(V+\tau ^{2}I)^{-1}(a-\mu 1),
+\textbf{From the precision form to the update form.} The precision form
+inverts $V$, which is inconvenient and numerically poor. The key algebraic
+fact is that
+\begin{equation}\label{eq:ch8-factor}
+P = V^{-1}+\tau^{-2}I = \tau^{-2}V^{-1}(V+\tau^2 I)
+\quad\Longrightarrow\quad
+P^{-1} = \tau^2 (V+\tau^2 I)^{-1} V .
 \end{equation}
-
-\begin{equation}
-C_{\mathrm{post}}=(V^{-1}+\tau ^{-2}I)^{-1}=\tau ^{2}I-\tau ^{4}(V+\tau ^{2}I)^{-1}.
+Substituting into $C_{\mathrm{post}}=P^{-1}$ and simplifying (equivalently,
+the Woodbury identity \eqref{eq:eb-woodbury}) gives
+\begin{equation}\label{eq:ch8-Cpost}
+C_{\mathrm{post}} = (V^{-1}+\tau^{-2}I)^{-1} = \tau^2 I - \tau^4 (V+\tau^2 I)^{-1}.
 \end{equation}
-
-If V is diagonal with entry s\textsubscript{i}\textsuperscript{2}, the formula reduces to
-the familiar scalar weighted average:
-
-\begin{equation}
-E(\alpha _{i}|a_{i}) = w_{i}a_{i} + (1-w_{i})\mu , w_{i}=\tau ^{2}/(\tau ^{2}+s_{i}^{2}).
+For the mean, split $a=(a-\mu\mathbf{1})+\mu\mathbf{1}$ so that
+$b=V^{-1}(a-\mu\mathbf{1})+P\mu\mathbf{1}$; then
+\begin{equation}\label{eq:ch8-mpost-deriv}
+m_{\mathrm{post}} = P^{-1}b
+= \mu\mathbf{1} + P^{-1}V^{-1}(a-\mu\mathbf{1})
+= \mu\mathbf{1} + \tau^2(V+\tau^2 I)^{-1}(a-\mu\mathbf{1}),
 \end{equation}
+the last step using $P^{-1}V^{-1}=\tau^2(V+\tau^2 I)^{-1}$ from
+\eqref{eq:ch8-factor}. Defining the \emph{shrinkage matrix}
+$B=\tau^2(V+\tau^2 I)^{-1}$, the update reads
+$m_{\mathrm{post}}=\mu\mathbf{1}+B(a-\mu\mathbf{1})$: each raw alpha is pulled
+toward the common centre $\mu$ by the matrix $B$, whose diagonal entries are
+the per-portfolio shrinkage weights reported in the results.
 
-For example, with \ensuremath{\mu } = \ensuremath{-}26 bps/year, \ensuremath{\tau } = 94 bps/year, a\textsubscript{i}
-= 250 bps/year and s\textsubscript{i} = 150 bps/year,
-
-\begin{equation}
-w_{i}=94^{2}/(94^{2}+150^{2})=0.282, \quad \text{posterior mean}= 0.282(250)+0.718(-26)=51.8\ \mathrm{bps/year}.
+\textbf{Uncertainty in the estimated common mean.} Equations
+\eqref{eq:ch8-Cpost}--\eqref{eq:ch8-mpost-deriv} condition on a fixed $\mu$,
+but $\mu$ is itself profiled from the data (next section). Because the
+posterior mean loads on $\mu$ through $(I-B)\mathbf{1}$, the reported
+covariance adds a first-order term for that estimation uncertainty,
+\begin{equation}\label{eq:ch8-muterm}
+\widehat{\operatorname{Var}}(\alpha\mid\text{data})
+= C_{\mathrm{post}} + \operatorname{Var}(\hat\mu)\,(I-B)\mathbf{1}\,\mathbf{1}^{\top}(I-B)^{\top},
+\qquad \operatorname{Var}(\hat\mu)=\frac{1}{\mathbf{1}^{\top}S(\tau)^{-1}\mathbf{1}} .
 \end{equation}
+Uncertainty in $\tau$ is \emph{not} integrated, and $V$ is treated as known
+during the conditional posterior, so the intervals are model-based
+approximations rather than exact.
 
-The estimate shrinks sharply because its sampling uncertainty exceeds
-the cross-sectional prior dispersion. In the actual multivariate
-calculation there is no independent scalar weight for each portfolio:
-off-diagonal elements of V couple all updates.
+\textbf{Scalar special case.} If $V$ is diagonal with entries $s_i^2$, then
+$B$ is diagonal and the update reduces to the familiar scalar weighted
+average
+\begin{equation}\label{eq:ch8-scalar}
+\mathbb{E}(\alpha_i\mid a_i) = w_i a_i + (1-w_i)\mu,
+\qquad w_i = \frac{\tau^2}{\tau^2+s_i^2}.
+\end{equation}
+For example, with $\mu=-26$, $\tau=94$, $a_i=250$ and $s_i=150$ bps/year,
+\begin{equation}\label{eq:ch8-example}
+w_i = \frac{94^2}{94^2+150^2} = 0.282,
+\qquad
+\mathbb{E}(\alpha_i\mid a_i) = 0.282(250)+0.718(-26) = 51.8\ \text{bps/year}.
+\end{equation}
+The estimate shrinks sharply because its sampling uncertainty exceeds the
+cross-sectional prior dispersion. In the full multivariate calculation
+there is no independent scalar weight per portfolio: the off-diagonal
+entries of $V$ (hence of $B$) couple all 25 updates.
 
 \hypertarget{estimating-ux3bc-and-ux3c4-by-marginal-likelihood}{%
 \section{Estimating \ensuremath{\mu } and \ensuremath{\tau } by marginal

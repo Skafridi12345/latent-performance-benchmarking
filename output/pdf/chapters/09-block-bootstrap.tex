@@ -53,6 +53,17 @@ independent bootstrap to this dependent panel.
   contemporaneous cross-portfolio shocks are preserved --- the same
   dependence the joint HAC covariance of Chapter~6 models.
 \end{itemize}
+Concretely, one replicate draws $M=\lceil T/b\rceil$ starting indices
+$s_1,\dots,s_M$ independently and uniformly from $\{1,\dots,T\}$,
+concatenates their circular blocks \eqref{eq:ch9-circular}, and keeps the
+first $T$ entries:
+\begin{equation}\label{eq:ch9-indexvec}
+I_r = \bigl[\,\mathrm{block}(s_1),\ \mathrm{block}(s_2),\ \dots,\ \mathrm{block}(s_M)\,\bigr]_{1:T}.
+\end{equation}
+The same index vector $I_r$ then selects the rows of every portfolio and
+every factor, and the draws use a fixed seed (2026) so the entire
+resampling distribution is exactly reproducible.
+
 Consistency of the block bootstrap requires the block length to grow with
 the sample but slowly: $b\to\infty$ with $b/T\to0$ as $T\to\infty$. The
 canonical run fixes $b=12$ months, one year of local dependence.
@@ -107,20 +118,24 @@ the portfolio panel, exactly this index vector selects rows of every
 portfolio and every factor. The duplicated 6 is valid bootstrap
 sampling; cross-sectional alignment at each selected date is preserved.
 
-Block length trades bias against variance. Very short blocks resemble
-IID resampling and break dependence; very long blocks leave few
-effectively distinct resamples. Twelve months is substantively
-interpretable here, but a defensible workflow also checks nearby
-lengths. With B draws, the Monte Carlo standard error of an estimated
-probability \ensuremath{\hat{p}} is approximately
-
-\begin{equation}
-MCSE(\hat{p}) \approx  \sqrt{\hat{p}(1-\hat{p})/B}.
+Block length trades bias against variance. Very short blocks resemble IID
+resampling and break dependence; very long blocks leave few effectively
+distinct resamples. Twelve months is substantively interpretable here, but
+a defensible workflow also checks nearby lengths (Chapter~13). Separately
+from this estimation error, a finite number of draws $B$ introduces
+\emph{Monte Carlo} error. A bootstrap probability $\hat p$ is the average of
+$B$ Bernoulli indicators \eqref{eq:ch9-estimand}, so its Monte Carlo
+standard error is the binomial standard error
+\begin{equation}\label{eq:ch9-mcse}
+\operatorname{MCSE}(\hat p) \approx \sqrt{\hat p(1-\hat p)/B}.
 \end{equation}
-
-At \ensuremath{\hat{p}} = 0.5 and B = 5,000 this is about 0.0071, or 0.71 percentage
-points. Quantile endpoints generally need more draws than posterior
-means, which is why the 1,000-versus-5,000 stability comparison matters.
+At $\hat p=0.5$ and $B=5{,}000$ this is about $0.0071$, or $0.71$ percentage
+points. Quantile endpoints of the rank and score distributions converge
+more slowly than posterior means --- extreme order statistics are estimated
+from few effective draws --- which is why the $1{,}000$-versus-$5{,}000$
+stability comparison is reported: increasing $B$ to $5{,}000$ moves rank
+interval endpoints by at most one rank but alpha-tail endpoints by as much
+as $27$ bps/year.
 
 \hypertarget{outputs}{%
 \section{Outputs}\label{outputs}}
