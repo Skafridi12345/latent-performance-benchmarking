@@ -7,28 +7,55 @@ uncertainty}\label{common-date-circular-block-bootstrap-for-rank-uncertainty}}
 \section{Why a rank needs its own uncertainty
 analysis}\label{why-a-rank-needs-its-own-uncertainty-analysis}}
 
-A rank is a discontinuous function of all 25 scores. A standard error
-for portfolio i alone cannot tell us whether it remains above portfolio
-j when shared historical shocks are resampled.
+A \emph{rank} is a discontinuous function of all 25 scores. Writing the
+descending rank of portfolio $i$ in terms of its posterior score $\hat s_i$
+as
+\begin{equation}\label{eq:ch9-rank}
+R_i = 1 + \sum_{j\ne i}\mathbf{1}\{\hat s_j > \hat s_i\},
+\end{equation}
+it is a step function: flat almost everywhere and jumping by an integer when
+two scores cross. Its gradient is zero wherever it is defined, so the delta
+method (\S\ref{prelim-asymp}) cannot attach a standard error to it, and an
+arbitrarily small change in one score can move a rank by several positions.
+A standard error for portfolio $i$ alone therefore cannot say whether it
+stays above portfolio $j$ when the shared historical shocks are resampled.
+The only honest description of rank uncertainty is the sampling distribution
+of the whole ranking, obtained by resampling the entire estimator
+(\S\ref{prelim-boot}).
 
 \hypertarget{why-blocks-and-why-common-dates}{%
 \section{Why blocks and why common
 dates?}\label{why-blocks-and-why-common-dates}}
 
+The bootstrap approximates the sampling distribution of a statistic by
+recomputing it on data resampled from an estimate of the data-generating
+process (\S\ref{prelim-boot}). Three design choices adapt the plain
+independent bootstrap to this dependent panel.
 \begin{itemize}
 \tightlist
 \item
-  Monthly observations are dependent; resampling individual months
-  destroys serial structure.
+  Monthly observations are dependent, so resampling \emph{individual}
+  months would destroy serial and cross-sectional structure. The
+  \emph{block} bootstrap resamples contiguous runs of length $b$ instead,
+  preserving dependence within a block.
 \item
-  A 12-month block preserves local dependence across a year.
+  A block starting at index $s$ is taken \emph{circularly}, wrapping modulo
+  $T$:
+  \begin{equation}\label{eq:ch9-circular}
+  \mathrm{block}(s) = \bigl((s+h-1)\bmod T\bigr)+1,\qquad h=0,\dots,b-1,
+  \end{equation}
+  so every month --- including those near the start and end of the record ---
+  is equally likely to begin a complete block, removing the edge bias of the
+  non-circular version.
 \item
-  Circular wrapping gives every month equal opportunity to begin a
-  complete block.
-\item
-  The same resampled date indices must be used for every portfolio to
-  preserve cross-sectional shocks.
+  The \emph{same} resampled date-index vector is applied to all 25
+  portfolios and all factors (a \emph{common-date} bootstrap), so
+  contemporaneous cross-portfolio shocks are preserved --- the same
+  dependence the joint HAC covariance of Chapter~6 models.
 \end{itemize}
+Consistency of the block bootstrap requires the block length to grow with
+the sample but slowly: $b\to\infty$ with $b/T\to0$ as $T\to\infty$. The
+canonical run fixes $b=12$ months, one year of local dependence.
 
 \hypertarget{full-refit-algorithm}{%
 \section{Full-refit algorithm}\label{full-refit-algorithm}}
@@ -47,8 +74,23 @@ for b in range(B):
     store(post_b, rank_b)
 \end{verbatim}
 
-Do not hold the original betas, covariance or hyperparameters fixed
-inside the bootstrap. That would understate estimator uncertainty.
+Do not hold the original betas, covariance or hyperparameters fixed inside
+the bootstrap: every stage --- regressions, joint HAC covariance,
+empirical-Bayes hyperparameters, ranking --- is refitted on each resample, so
+that the reported uncertainty reflects the \emph{whole} estimator and not
+just the last step. Holding any stage fixed would understate uncertainty.
+
+Across the $B$ replicates, portfolio $i$'s rank and score uncertainty are
+summarised by empirical quantiles $Q_p$ of its resampled ranks $R_i^{(b)}$
+and posterior scores:
+\begin{equation}\label{eq:ch9-estimand}
+\text{95\% rank interval}_i = \bigl[Q_{0.025}\{R_i^{(b)}\},\,Q_{0.975}\{R_i^{(b)}\}\bigr],
+\qquad
+\widehat{\Pr}_i(\text{top quintile}) = \frac{1}{B}\sum_{b=1}^{B}\mathbf{1}\{R_i^{(b)}\le5\}.
+\end{equation}
+These are resampling distributions of the complete estimator --- not Gaussian
+confidence intervals and not Bayesian credible intervals --- so they can be
+asymmetric and are naturally bounded at ranks 1 and 25.
 
 \hypertarget{a-circular-index-example}{%
 \section{A circular-index example}\label{a-circular-index-example}}
